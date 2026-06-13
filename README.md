@@ -1,36 +1,100 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# A₹tha — Know What's Blocking Your Future
 
-## Getting Started
+A personal finance decision tool for young Indians built around a Financial Digital Twin.
+Built for the Ayuda Individual Hackathon — Jun 13–14, 2025.
 
-First, run the development server:
+## What It Does
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+A₹tha builds a persistent financial model of your life in 5 minutes, then answers the
+question every other finance app ignores: what is specifically blocking you from your
+goal — and by exactly how much?
+
+The Causal Attribution Engine quantifies each risk factor's contribution to your goal
+shortfall. Not "lifestyle inflation is a risk" — "lifestyle inflation drives 38% of
+your shortfall." The Decision Lab lets you simulate any life decision against your
+twin in real time.
+
+## Core Flow
+
+1. Build your Financial Digital Twin (3-step onboarding + Indian subscription picker)
+2. A₹tha analyzes the twin — deterministic math on real Indian data, then Groq for
+   causal reasoning. Output: goal probability %, causal attribution, health score.
+3. Enter the Decision Lab — one interface, ask anything. "What if I do an MBA?"
+   Get net worth at 5yr/10yr, break-even year, goal impact — grounded in your twin.
+4. Twin persists. Trajectory evolves as salary and decisions change.
+
+## Tech Stack
+
+| Layer       | Technology                          |
+|-------------|-------------------------------------|
+| Framework   | Next.js 14 (App Router)             |
+| Styling     | Tailwind CSS                        |
+| Icons       | Lucide React                        |
+| Backend     | Supabase (PostgreSQL + Auth)        |
+| AI          | Groq — llama-3.3-70b-versatile      |
+| Deployment  | Bolt.new (via GitHub import)        |
+
+## Architecture Principle
+
+App code does all financial math using real Indian datasets stored in Supabase
+(mfapi.in Nifty returns, NHB RESIDEX property appreciation, RBI CPI inflation,
+insurer term premiums). Groq only reasons over pre-calculated accurate numbers —
+it never does financial calculations itself. This eliminates hallucination risk
+on financial figures.
+
+## Database
+
+11 tables across two categories:
+
+**User data (5):** `profiles`, `financial_twin`, `subscriptions`,
+`twin_analyses`, `simulations`
+
+**Reference data (6):** `market_returns`, `city_inflation`,
+`property_appreciation`, `term_premiums`, `tax_slabs`, `credit_cards`
+
+All tables have Row Level Security enabled. User tables are owner-only.
+Reference tables are authenticated read-only.
+
+## Project Structure
+artha/
+├── app/
+│   ├── (auth)/login and signup
+│   ├── (protected)/onboarding, dashboard, decision-lab
+│   └── api/analyze-twin, simulate, spend-check
+├── components/onboarding, dashboard, decision-lab, shared
+├── lib/supabase, financial-math, credit-card-match, subscriptions-data
+├── types/twin, analysis, reference
+├── scripts/seed.ts
+└── supabase/migrations/
+
+## Environment Variables
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
+SUPABASE_SECRET_KEY=
+
+SUPABASE_PROJECT_REF=
+GROQ_API_KEY=
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Data Sources
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- **Market returns** — mfapi.in (Nifty 50 historical NAV, CAGR calculated)
+- **City inflation** — RBI DBIE CPI tables (CSV download)
+- **Property appreciation** — NHB RESIDEX quarterly report (PDF extraction)
+- **Term premiums** — HDFC Life + Max Life online calculators (manual)
+- **Tax slabs** — incometax.gov.in FY2024-25, both regimes (hardcoded)
+- **Credit cards** — curated dataset, 40+ Indian cards
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## What Was Cut for V1
 
-## Learn More
+- Bank/CC statement upload — PDF format varies by Indian bank, breaks demos
+- Account Aggregator — requires RBI-registered FIU status
+- Weekly nudges — needs 7+ days of behavioral data to be meaningful
+- RAG for reference data — structured numerical data, direct queries are faster
+- Peer benchmarking — no user dataset at scale on day 1
 
-To learn more about Next.js, take a look at the following resources:
+## Builder
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Tharun Kumar — [github.com/tharun0648/artha](https://github.com/tharun0648/artha)
