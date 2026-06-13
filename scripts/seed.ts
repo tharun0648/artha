@@ -105,32 +105,58 @@ async function seedMarketReturns() {
 // ── 2. City Inflation ─────────────────────────────────────────
 async function seedCityInflation() {
   console.log('⏳ Seeding city inflation...')
-  // Place RBI DBIE CPI CSV at scripts/data/rbi-cpi.csv
-  // Format expected: City, State, CPI_Annual_Pct, Year
-  // Download from: https://dbie.rbi.org.in → Prices → CPI Urban by City
-  // TODO: implement CSV parse after data file is placed in scripts/data/
-  console.log('⚠️  city_inflation — awaiting scripts/data/rbi-cpi.csv')
+  const fs = await import('fs')
+  const path = await import('path')
+  const raw = fs.readFileSync(
+    path.resolve(process.cwd(), 'scripts/data/rbi-cpi.json'), 'utf-8'
+  )
+  const rows = JSON.parse(raw)
+  const { error } = await supabase
+    .from('city_inflation')
+    .upsert(rows, { onConflict: 'city,year' })
+  if (error) throw error
+  console.log(`✅ city_inflation — ${rows.length} rows seeded`)
 }
 
 // ── 3. Property Appreciation ──────────────────────────────────
 async function seedPropertyAppreciation() {
   console.log('⏳ Seeding property appreciation...')
-  // Place NHB RESIDEX extracted data at scripts/data/nhb-residex.json
-  // Format: [{ city, state, current_index, prev_year_index, as_of_quarter }]
-  // Extract from: https://nhb.org.in/residex → Latest quarterly PDF
-  // TODO: implement after data file is placed in scripts/data/
-  console.log('⚠️  property_appreciation — awaiting scripts/data/nhb-residex.json')
+  const fs = await import('fs')
+  const path = await import('path')
+  const raw = fs.readFileSync(
+    path.resolve(process.cwd(), 'scripts/data/nhb-residex.json'), 'utf-8'
+  )
+  const items = JSON.parse(raw)
+  const rows = items.map((item: any) => ({
+    city: item.city,
+    state: item.state,
+    annual_appreciation_pct: parseFloat(
+      ((item.current_index / item.prev_year_index) - 1).toFixed(6)
+    ),
+    residex_index_current: item.current_index,
+    as_of_quarter: item.as_of_quarter,
+  }))
+  const { error } = await supabase
+    .from('property_appreciation')
+    .upsert(rows, { onConflict: 'city' })
+  if (error) throw error
+  console.log(`✅ property_appreciation — ${rows.length} rows seeded`)
 }
 
 // ── 4. Term Premiums ──────────────────────────────────────────
 async function seedTermPremiums() {
   console.log('⏳ Seeding term insurance premiums...')
-  // Place manually collected data at scripts/data/term-premiums.json
-  // Format: [{ age_years, cover_amount_cr, annual_premium_inr, gender, smoker, insurer }]
-  // Source: HDFC Life + Max Life online calculators
-  // Policy term: 30 years, online purchase, no riders
-  // TODO: implement after data file is placed in scripts/data/
-  console.log('⚠️  term_premiums — awaiting scripts/data/term-premiums.json')
+  const fs = await import('fs')
+  const path = await import('path')
+  const raw = fs.readFileSync(
+    path.resolve(process.cwd(), 'scripts/data/term-premiums.json'), 'utf-8'
+  )
+  const rows = JSON.parse(raw)
+  const { error } = await supabase
+    .from('term_premiums')
+    .upsert(rows)
+  if (error) throw error
+  console.log(`✅ term_premiums — ${rows.length} rows seeded`)
 }
 
 // ── 5. Credit Cards ───────────────────────────────────────────
