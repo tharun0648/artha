@@ -136,10 +136,18 @@ async function seedTermPremiums() {
 // ── 5. Credit Cards ───────────────────────────────────────────
 async function seedCreditCards() {
   console.log('⏳ Seeding credit cards...')
-  // Place Tharun's card dataset at scripts/data/cc-data.json
-  // Schema: matches credit_cards table exactly (see types/reference.ts CreditCard)
-  // TODO: implement after cc-data.json is provided
-  console.log('⚠️  credit_cards — awaiting scripts/data/cc-data.json')
+  const fs = await import('fs')
+  const path = await import('path')
+  const raw = fs.readFileSync(
+    path.resolve(process.cwd(), 'scripts/data/cc-data.json'),
+    'utf-8'
+  )
+  const cards = JSON.parse(raw)
+  const { error } = await supabase
+    .from('credit_cards')
+    .upsert(cards, { onConflict: 'card_id' })
+  if (error) throw error
+  console.log(`✅ credit_cards — ${cards.length} rows seeded`)
 }
 
 // ── Main ──────────────────────────────────────────────────────
