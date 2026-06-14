@@ -18,6 +18,12 @@ const TONE_STYLES = {
   neutral: { border: 'var(--border)', label: 'Looks fine', labelColor: 'var(--success)', bg: 'var(--bg-surface)' },
 }
 
+const OPTION_LABELS: Record<string, string> = {
+  'Buy now': 'Buy it',
+  'Wait 48 hours': 'Sleep on it',
+  'Skip it': 'Skip for now',
+}
+
 export default function SpendCheckCard({ result }: Props) {
   const tone = TONE_STYLES[result.verdict_tone]
 
@@ -29,7 +35,7 @@ export default function SpendCheckCard({ result }: Props) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
-          Spend check
+          Should you buy this?
         </p>
         <span
           className="text-xs font-semibold px-2 py-0.5 rounded-full"
@@ -56,7 +62,7 @@ export default function SpendCheckCard({ result }: Props) {
           className="rounded-xl p-3"
           style={{ background: 'rgba(255,255,255,0.6)', border: '1px solid var(--border)' }}
         >
-          <p className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>10-yr opportunity cost</p>
+          <p className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>What this money could grow to in 10 years</p>
           <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
             {fmt(result.opportunity_cost_10yr)}
           </p>
@@ -65,12 +71,12 @@ export default function SpendCheckCard({ result }: Props) {
           className="rounded-xl p-3"
           style={{ background: 'rgba(255,255,255,0.6)', border: '1px solid var(--border)' }}
         >
-          <p className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>EMI ceiling</p>
+          <p className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>EMI health</p>
           <p
             className="text-sm font-semibold"
             style={{ color: result.emi_ceiling_breach ? 'var(--risk-high)' : 'var(--success)' }}
           >
-            {result.emi_ceiling_breach ? 'Would breach 40%' : 'Within limit'}
+            {result.emi_ceiling_breach ? '⚠ Risky — pushes your EMIs too high' : 'Within limit'}
           </p>
         </div>
       </div>
@@ -83,7 +89,7 @@ export default function SpendCheckCard({ result }: Props) {
             className="text-xs px-3 py-1.5 rounded-full border font-medium"
             style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)', background: 'rgba(255,255,255,0.6)' }}
           >
-            {opt}
+            {OPTION_LABELS[opt] ?? opt}
           </span>
         ))}
       </div>

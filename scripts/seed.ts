@@ -211,3 +211,90 @@ async function main() {
 }
 
 main()
+
+// ── Demo User ─────────────────────────────────────────────────
+async function seedDemoUser() {
+  console.log('⏳ Seeding demo user...')
+
+  // Step 1: Create or retrieve demo user
+  let demoUserId: string
+
+  const { data: createData, error: createError } = await supabase.auth.admin.createUser({
+    email: 'demo@artha.app',
+    password: 'demo1234',
+    email_confirm: true,
+  })
+
+  if (createError) {
+    if (!createError.message.toLowerCase().includes('already been registered') &&
+        !createError.message.toLowerCase().includes('already exists')) {
+      throw createError
+    }
+    const { data: listData, error: listError } = await supabase.auth.admin.listUsers()
+    if (listError) throw listError
+    const existing = listData.users.find(u => u.email === 'demo@artha.app')
+    if (!existing) throw new Error('Demo user not found after creation conflict')
+    demoUserId = existing.id
+  } else {
+    demoUserId = createData.user.id
+  }
+
+  // Step 2: Upsert profiles
+  const { error: profileError } = await supabase
+    .from('profiles')
+    .upsert({
+      id: demoUserId,
+      age: 25,
+      city: 'Bengaluru',
+      company_type: 'startup',
+      risk_appetite: 'moderate',
+    }, { onConflict: 'id' })
+  if (profileError) throw profileError
+
+  // Step 3: Upsert financial_twin
+  const { error: twinError } = await supabase
+    .from('financial_twin')
+    .upsert({
+      user_id: demoUserId,
+      monthly_income: 85000,
+      monthly_rent: 22000,
+      monthly_food: 8000,
+      monthly_other: 6000,
+      monthly_transport: 3000,
+      monthly_entertainment: 2000,
+      total_monthly_emi: 0,
+      current_savings: 180000,
+      equity_investments: 50000,
+      epf_balance: 40000,
+      primary_goal: 'home',
+      goal_target_amount: 5000000,
+      goal_target_year: 2032,
+    }, { onConflict: 'user_id' })
+  if (twinError) throw twinError
+
+  // Step 4: Replace subscriptions
+  const { error: deleteError } = await supabase
+    .from('subscriptions')
+    .delete()
+    .eq('user_id', demoUserId)
+  if (deleteError) throw deleteError
+
+  const { error: subError } = await supabase
+    .from('subscriptions')
+    .insert([
+      { user_id: demoUserId, name: 'Netflix',     category: 'entertainment', monthly_amount: 649 },
+      { user_id: demoUserId, name: 'Spotify',     category: 'music_audio',   monthly_amount: 119 },
+      { user_id: demoUserId, name: 'Swiggy One',  category: 'food_dining',   monthly_amount: 299 },
+    ])
+  if (subError) throw subError
+
+  // Step 5: Done
+  console.log(`Demo user ready. UUID: ${demoUserId}`)
+}
+
+if (process.argv.includes('--demo-user')) {
+  seedDemoUser().catch(err => {
+    console.error('❌ seedDemoUser failed:', err instanceof Error ? err.message : err)
+    process.exit(1)
+  })
+}

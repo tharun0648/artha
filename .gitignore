@@ -12,6 +12,11 @@
 
 # testing
 /coverage
+__tests__/
+scripts/eval-output.json
+scripts/groq-eval.ts
+playwright.config.ts
+jest.config.ts
 
 # next.js
 /.next/

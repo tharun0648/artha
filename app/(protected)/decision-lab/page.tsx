@@ -300,6 +300,7 @@ function DecisionLabContent() {
   const [simLoading, setSimLoading] = useState(false)
   const [simResult, setSimResult] = useState<SimulationResult | null>(null)
   const [simError, setSimError] = useState<string | null>(null)
+  const [activeScenario, setActiveScenario] = useState<string | null>(null)
 
   // Spend check
   const [spendModalOpen, setSpendModalOpen] = useState(false)
@@ -336,6 +337,7 @@ function DecisionLabContent() {
   const runSimulation = useCallback(async (scenario: string) => {
     setSimLoading(true)
     setSimResult(null)
+    setActiveScenario(scenario)
     setSpendResult(null)
     setCcResult(null)
     setSimError(null)
@@ -520,7 +522,7 @@ function DecisionLabContent() {
             )}
 
             {/* Results */}
-            {simResult && !simLoading && <SimulationCard result={simResult} />}
+            {simResult && !simLoading && <SimulationCard result={simResult} scenario={activeScenario ?? undefined} />}
             {spendResult && !spendLoading && <SpendCheckCard result={spendResult} />}
             {ccResult && !ccLoading && <CreditCardResults cards={ccResult} />}
 

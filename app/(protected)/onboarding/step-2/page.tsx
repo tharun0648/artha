@@ -130,6 +130,40 @@ export default function Step2Page() {
   const [errors, setErrors] = useState<FieldErrors>({})
   const [attempted, setAttempted] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [selectedPersona, setSelectedPersona] = useState<null | 'graduate' | 'midcareer' | 'senior'>(null)
+
+  const PERSONAS = {
+    graduate: {
+      label: 'Fresh Graduate 🎓',
+      description: 'Early career, building first financial habits. Low savings, no debt, high potential.',
+      values: { income: 45000, lastYear: 35000, rent: 12000, food: 6000, other: 8500, emi: 0, savings: 50000, equity: 0, epf: 0 },
+    },
+    midcareer: {
+      label: 'Mid-career Professional 💼',
+      description: 'Stable income, some EMIs, building wealth steadily. Typical Bangalore/Mumbai professional.',
+      values: { income: 85000, lastYear: 70000, rent: 22000, food: 8000, other: 11000, emi: 15000, savings: 300000, equity: 150000, epf: 80000 },
+    },
+    senior: {
+      label: 'Senior with Commitments 🏠',
+      description: 'High income, significant EMIs, large asset base. Managing wealth and commitments.',
+      values: { income: 150000, lastYear: 130000, rent: 35000, food: 12000, other: 19000, emi: 45000, savings: 800000, equity: 500000, epf: 300000 },
+    },
+  } as const
+
+  function applyPersona(key: 'graduate' | 'midcareer' | 'senior') {
+    const v = PERSONAS[key].values
+    setMonthlyIncome(v.income)
+    setLastYearIncome(v.lastYear)
+    setRent(v.rent)
+    setFood(v.food)
+    setOther(v.other)
+    setEmi(v.emi)
+    setSavings(v.savings)
+    setEquity(v.equity)
+    setEpf(v.epf)
+    setSelectedPersona(key)
+    if (attempted) setErrors(validateFields(v.income, v.rent, v.food, v.other, v.emi, v.savings))
+  }
 
   const surplus = monthlyIncome - rent - food - other - emi
   const surplusPositive = surplus >= 0
@@ -213,6 +247,35 @@ export default function Step2Page() {
         <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
           Your income, spending, and assets — be honest, this is just for you.
         </p>
+      </div>
+
+      {/* Persona quick-fill */}
+      <div className="mb-5">
+        <p className="text-xs font-medium mb-3" style={{ color: 'var(--text-muted)' }}>
+          Quick start — pick a profile similar to yours
+        </p>
+        <div className="flex flex-col sm:flex-row gap-3">
+          {(Object.keys(PERSONAS) as Array<keyof typeof PERSONAS>).map(key => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => applyPersona(key)}
+              className="flex-1 border rounded-lg px-4 py-3 text-sm text-left transition-colors hover:border-[#4F6F52] hover:bg-green-50"
+              style={{
+                borderColor: selectedPersona === key ? '#4F6F52' : 'var(--border)',
+                background: selectedPersona === key ? '#f0fdf4' : 'var(--bg-surface)',
+                color: 'var(--text-primary)',
+              }}
+            >
+              {PERSONAS[key].label}
+            </button>
+          ))}
+        </div>
+        {selectedPersona && (
+          <p className="text-sm italic mt-2" style={{ color: 'var(--text-muted)' }}>
+            {PERSONAS[selectedPersona].description}
+          </p>
+        )}
       </div>
 
       <div

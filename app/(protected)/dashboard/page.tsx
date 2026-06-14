@@ -153,10 +153,25 @@ function DashboardContent() {
     )
   }
 
+  const incompleteTwinBanner = (!twin || !twin.monthly_income) ? (
+    <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-lg px-4 py-3 text-sm mb-6 flex items-center justify-between">
+      <span>Complete your financial profile to see your dashboard</span>
+      <Link href="/onboarding/step-2" className="text-amber-700 font-medium ml-4 shrink-0">→</Link>
+    </div>
+  ) : null
+
+  const missingGoalBanner = (twin && twin.monthly_income && !twin.primary_goal) ? (
+    <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-lg px-4 py-3 text-sm mb-6 flex items-center justify-between">
+      <span>Add your financial goal to get your verdict</span>
+      <Link href="/onboarding/step-3" className="text-amber-700 font-medium ml-4 shrink-0">→</Link>
+    </div>
+  ) : null
+
   // State A: no twin or no income → profile card + step-2 CTA
   if (!twin || !hasFinancials) {
     return (
       <div className="space-y-4">
+        {incompleteTwinBanner}
         <div>
           <h1 className="text-2xl font-semibold" style={{ color: 'var(--text-primary)' }}>
             Welcome, {userName}.
@@ -256,6 +271,7 @@ function DashboardContent() {
 
     return (
       <div>
+        {missingGoalBanner}
         <div className="grid grid-cols-3 gap-3 mb-5">
           <div className="rounded-2xl border p-3"
                style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}>

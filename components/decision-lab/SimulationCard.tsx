@@ -4,6 +4,7 @@ import type { SimulationResult } from '@/types/analysis'
 
 interface Props {
   result: SimulationResult
+  scenario?: string
 }
 
 function fmt(n: number): string {
@@ -19,18 +20,30 @@ function verdictColor(v: string): string {
   return 'var(--warning)'
 }
 
-export default function SimulationCard({ result }: Props) {
+const SCENARIO_LABELS: Record<string, string> = {
+  mba: 'do an MBA',
+  home: 'buy a home',
+  'job-switch': 'switch jobs',
+}
+
+export default function SimulationCard({ result, scenario }: Props) {
   const color = verdictColor(result.verdict)
+  const scenarioLabel = scenario ? (SCENARIO_LABELS[scenario] ?? 'make this move') : 'make this move'
 
   return (
     <div className="space-y-3">
+      {/* Plain-English summary */}
+      <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+        Here&apos;s what happens to your finances if you {scenarioLabel}.
+      </p>
+
       {/* Verdict */}
       <div
         className="rounded-2xl border p-5"
         style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)', boxShadow: 'var(--shadow-md)' }}
       >
         <p className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: 'var(--text-muted)' }}>
-          Verdict
+          What this means for you
         </p>
         <p className="text-base font-semibold mb-1" style={{ color }}>
           {result.verdict}
@@ -53,21 +66,21 @@ export default function SimulationCard({ result }: Props) {
             className="rounded-xl p-3 space-y-2"
             style={{ background: 'var(--bg-surface-secondary)' }}
           >
-            <p className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>Current path</p>
+            <p className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>If you don&apos;t do this</p>
             <div>
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>5-yr net worth</p>
+              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Your money in 5 years</p>
               <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
                 {fmt(result.current_path.net_worth_5yr)}
               </p>
             </div>
             <div>
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>10-yr net worth</p>
+              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Your money in 10 years</p>
               <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
                 {fmt(result.current_path.net_worth_10yr)}
               </p>
             </div>
             <div>
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Goal reached</p>
+              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Goal achieved by</p>
               <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
                 {result.current_path.goal_achieved_year ?? '—'}
               </p>
@@ -78,21 +91,21 @@ export default function SimulationCard({ result }: Props) {
             className="rounded-xl p-3 space-y-2"
             style={{ background: 'var(--brand-soft)', border: '1px solid var(--brand)' }}
           >
-            <p className="text-xs font-medium" style={{ color: 'var(--brand)' }}>After scenario</p>
+            <p className="text-xs font-medium" style={{ color: 'var(--brand)' }}>If you go ahead</p>
             <div>
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>5-yr net worth</p>
+              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Your money in 5 years</p>
               <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
                 {fmt(result.scenario_path.net_worth_5yr)}
               </p>
             </div>
             <div>
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>10-yr net worth</p>
+              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Your money in 10 years</p>
               <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
                 {fmt(result.scenario_path.net_worth_10yr)}
               </p>
             </div>
             <div>
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Goal reached</p>
+              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Goal achieved by</p>
               <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
                 {result.scenario_path.goal_achieved_year ?? '—'}
               </p>
@@ -122,13 +135,12 @@ export default function SimulationCard({ result }: Props) {
               style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}
             >
               <p className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: 'var(--risk-high)' }}>
-                Risks
+                Watch out for
               </p>
               <ul className="space-y-1.5">
                 {result.key_risks.map((r, i) => (
-                  <li key={i} className="text-sm flex gap-2" style={{ color: 'var(--text-secondary)' }}>
-                    <span style={{ color: 'var(--risk-high)' }}>·</span>
-                    {r}
+                  <li key={i} className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                    ⚠ {r}
                   </li>
                 ))}
               </ul>
@@ -141,13 +153,12 @@ export default function SimulationCard({ result }: Props) {
               style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}
             >
               <p className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: 'var(--success)' }}>
-                Opportunities
+                Upside if you do this
               </p>
               <ul className="space-y-1.5">
                 {result.key_opportunities.map((o, i) => (
-                  <li key={i} className="text-sm flex gap-2" style={{ color: 'var(--text-secondary)' }}>
-                    <span style={{ color: 'var(--success)' }}>·</span>
-                    {o}
+                  <li key={i} className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                    ✓ {o}
                   </li>
                 ))}
               </ul>

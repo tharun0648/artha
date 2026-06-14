@@ -16,74 +16,49 @@ interface ChatRequest {
   messages: ChatMessage[]
 }
 
-function fmt(n: number): string {
-  if (n >= 10_00_000) return `₹${(n / 10_00_000).toFixed(1)}L`
-  if (n >= 1_000) return `₹${(n / 1_000).toFixed(0)}k`
-  return `₹${Math.round(n)}`
-}
-
 function buildSystemPrompt(
   twin: FinancialTwin,
   profile: Profile,
   subscriptions: Subscription[],
   verdict: VerdictOutput | null
 ): string {
-  const surplus = twin.monthly_income - twin.total_monthly_expenses
-  const savingsRate = twin.monthly_income > 0
-    ? Math.round((surplus / twin.monthly_income) * 100)
-    : 0
-  const yearsToGoal = twin.goal_target_year
-    ? twin.goal_target_year - new Date().getFullYear()
-    : null
+  const income = twin.monthly_income ?? 0
+  const expenses = twin.total_monthly_expenses ?? (
+    (twin.monthly_rent ?? 0) +
+    (twin.monthly_food ?? 0) +
+    (twin.monthly_other ?? 0) +
+    (twin.monthly_transport ?? 0) +
+    (twin.monthly_entertainment ?? 0) +
+    (twin.total_monthly_emi ?? 0)
+  )
+  const surplus = income - expenses
+  const surplusPct = income > 0 ? Math.round((surplus / income) * 100) : 0
+  const runway = Math.round((twin.current_savings ?? 0) / Math.max(1, expenses))
+  const subscriptionList = subscriptions.length > 0
+    ? subscriptions.map(s => `${s.name} ₹${s.monthly_amount}/mo`).join(', ')
+    : 'None recorded'
+  const goalProbability = verdict?.goal_probability ?? 'not yet calculated'
+  const otherExpenses = (twin.monthly_other ?? 0) + (twin.monthly_transport ?? 0) + (twin.monthly_entertainment ?? 0)
 
-  const subLines = subscriptions.length > 0
-    ? subscriptions.map(s => `  · ${s.name}: ₹${s.monthly_amount}/mo`).join('\n')
-    : '  · None recorded'
+  return `You are Artha, a sharp and direct personal finance advisor for Indians. You have access to this user's complete financial picture. Always reason from their specific numbers — never give generic advice.
 
-  const goalLine = twin.primary_goal
-    ? `${twin.primary_goal} · ${fmt(twin.goal_target_amount)} by ${twin.goal_target_year}${yearsToGoal !== null ? ` (${yearsToGoal} years away)` : ''}`
-    : 'Not set'
+USER'S FINANCIAL SNAPSHOT:
+- Monthly take-home: ₹${income}
+- Monthly expenses: ₹${expenses} (rent ₹${twin.monthly_rent ?? 0}, food ₹${twin.monthly_food ?? 0}, EMIs ₹${twin.total_monthly_emi ?? 0}, other ₹${otherExpenses})
+- Monthly surplus: ₹${surplus} (${surplusPct}% savings rate)
+- Savings: ₹${twin.current_savings ?? 0} | Equity: ₹${twin.equity_investments ?? 0} | EPF: ₹${twin.epf_balance ?? 0}
+- Emergency runway: ${runway} months
+- Goal: ${twin.primary_goal ?? 'Not set'} — ₹${twin.goal_target_amount ?? 0} by ${twin.goal_target_year ?? 'N/A'}
+- Goal probability: ${goalProbability}% (from latest analysis)
+- Active subscriptions: ${subscriptionList}
 
-  const verdictLines = verdict
-    ? `Goal probability: ${verdict.goal_probability}% (confidence ${verdict.confidence}%)
-Verdict: ${verdict.verdict}`
-    : 'Goal analysis: Not yet run'
-
-  return `You are Artha, a personal finance partner for young working Indians.
-
-Persona: sharp, direct, zero fluff. Speak like a CA friend who knows the user's exact numbers.
-Never give generic advice. Every answer must reference the user's specific rupee amounts below.
-Indian context only: SIP, EPF, NPS, ELSS, PPF, tax slabs, Indian real estate. No US/UK products.
-Keep replies under 120 words unless the user explicitly asks for a detailed breakdown.
-End with one concrete next step when giving advice.
-If asked about something unrelated to personal finance, redirect in one sentence.
-
-USER FINANCIAL SNAPSHOT
-=======================
-Income & cashflow
-- Monthly take-home: ${fmt(twin.monthly_income)}
-- Monthly expenses (total): ${fmt(twin.total_monthly_expenses)}
-- Monthly surplus: ${fmt(surplus)} (${savingsRate}% savings rate)
-- Total monthly EMI: ${fmt(twin.total_monthly_emi)}
-
-Assets
-- Savings / liquid: ${fmt(twin.current_savings)}
-- Equity / MF: ${fmt(twin.equity_investments)}
-- EPF balance: ${fmt(twin.epf_balance)}
-
-Profile
-- Age: ${profile.age}
-- City: ${profile.city ?? 'Unknown'}
-- Company type: ${profile.company_type ?? 'Unknown'}
-- Risk appetite: ${profile.risk_appetite ?? 'moderate'}
-
-Goal
-- ${goalLine}
-- ${verdictLines}
-
-Active subscriptions (monthly)
-${subLines}
-Total subscription spend: ${fmt(subscriptions.reduce((s, sub) => s + sub.monthly_amount, 0))}/mo`.trim()
+RULES:
+1. Never give advice without referencing at least one of their actual numbers.
+2. For expense questions: calculate what % of their income each category is, compare to healthy benchmarks (rent <30%, food <15%, EMIs <40%), then give a specific rupee recommendation.
+3. For savings questions: use their actual surplus and compound it at 12% to show what SIP they could start.
+4. Keep responses under 120 words. Be direct. No filler phrases like "Great question!" or "Certainly!".
+5. If asked something outside personal finance, say: "I only help with financial decisions. What would you like to know about your money?"
+6. ALWAYS end your response with a line starting with '→ This week:' followed by one specific, concrete action. Example: '→ This week: set up a ₹5,000 SIP on Groww or Zerodha.' Never end without this line.`
 }
 
 export async function POST(req: Request) {

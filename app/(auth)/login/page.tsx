@@ -1,8 +1,22 @@
 'use client'
 import { createClient } from '@/lib/supabase/client'
+import { useRouter } from 'next/navigation'
+import { useState } from 'react'
+
+function Spinner() {
+  return (
+    <span className="animate-spin border-2 border-current border-t-transparent rounded-full w-4 h-4 inline-block" />
+  )
+}
 
 export default function LoginPage() {
   const supabase = createClient()
+  const router = useRouter()
+
+  const [fullLoading, setFullLoading] = useState(false)
+  const [fullError, setFullError] = useState('')
+  const [tempLoading, setTempLoading] = useState(false)
+  const [tempError, setTempError] = useState('')
 
   const handleGoogleSignIn = async () => {
     await supabase.auth.signInWithOAuth({
@@ -11,6 +25,34 @@ export default function LoginPage() {
         redirectTo: `${window.location.origin}/auth/callback?oauth=true`,
       },
     })
+  }
+
+  const handleFullDemo = async () => {
+    setFullLoading(true)
+    setFullError('')
+    try {
+      const res = await fetch('/api/demo/full', { method: 'POST' })
+      if (!res.ok) throw new Error()
+      router.push('/demo-preview')
+    } catch {
+      setFullError('Could not load demo. Try again.')
+    } finally {
+      setFullLoading(false)
+    }
+  }
+
+  const handleTempDemo = async () => {
+    setTempLoading(true)
+    setTempError('')
+    try {
+      const res = await fetch('/api/demo/temp', { method: 'POST' })
+      if (!res.ok) throw new Error()
+      router.push('/onboarding/step-1')
+    } catch {
+      setTempError('Could not start session. Try again.')
+    } finally {
+      setTempLoading(false)
+    }
   }
 
   return (
@@ -46,6 +88,47 @@ export default function LoginPage() {
             </svg>
             Continue with Google
           </button>
+
+          {/* Demo divider */}
+          <div className="flex items-center gap-3 my-6">
+            <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
+            <span className="text-xs text-gray-400">or try a demo</span>
+            <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
+          </div>
+
+          {/* Full demo button */}
+          <div className="mb-3">
+            <button
+              onClick={handleFullDemo}
+              disabled={fullLoading || tempLoading}
+              className="w-full flex flex-col items-center justify-center gap-1 px-4 py-3 rounded-md transition-colors hover:opacity-90 disabled:opacity-60"
+              style={{ background: '#4F6F52', color: '#fff' }}
+            >
+              <span className="flex items-center gap-2 text-sm font-medium">
+                {fullLoading && <Spinner />}
+                View full demo
+              </span>
+              <span className="text-xs opacity-70">Pre-filled account · instant dashboard</span>
+            </button>
+            {fullError && <p className="text-red-500 text-sm mt-1">{fullError}</p>}
+          </div>
+
+          {/* Temp session button */}
+          <div>
+            <button
+              onClick={handleTempDemo}
+              disabled={fullLoading || tempLoading}
+              className="w-full flex flex-col items-center justify-center gap-1 px-4 py-3 rounded-md border transition-colors hover:opacity-90 disabled:opacity-60 bg-transparent"
+              style={{ borderColor: '#4F6F52', color: '#4F6F52' }}
+            >
+              <span className="flex items-center gap-2 text-sm font-medium">
+                {tempLoading && <Spinner />}
+                Try it yourself
+              </span>
+              <span className="text-xs opacity-70">Temporary session · cleared when you close the browser</span>
+            </button>
+            {tempError && <p className="text-red-500 text-sm mt-1">{tempError}</p>}
+          </div>
 
           <p className="text-xs text-center mt-6" style={{ color: 'var(--text-muted)' }}>
             Your financial data is private and never shared.

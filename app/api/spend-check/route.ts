@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import Groq from 'groq-sdk'
 import { createClient } from '@/lib/supabase/server'
-import { sipFutureValue } from '@/lib/financial-math'
 import { SPEND_CHECK_SYSTEM_PROMPT } from '@/lib/prompts'
 import type { SpendCheckResult } from '@/types/analysis'
 import type { FinancialTwin, Profile, Subscription } from '@/types/twin'
@@ -80,9 +79,8 @@ export async function POST(req: Request) {
   const emiHeadroom = twin.monthly_income * 0.4 - twin.total_monthly_emi
   const emiBreached = amount > emiHeadroom
 
-  // Opportunity cost: what amount grows to if invested as lump-sum equivalent SIP over 10 years
-  const oppCostFV = sipFutureValue(amount / 12, 0.12, 10)
-  const oppCost = Math.round(Math.max(oppCostFV - amount, 0))
+  // Opportunity cost: lump-sum compound growth at 12% over 10 years minus principal
+  const oppCost = Math.round(amount * Math.pow(1.12, 10)) - amount
 
   const surplus = twin.monthly_income - twin.total_monthly_expenses
   const monthlySubTotal = subscriptions.reduce((s, sub) => s + sub.monthly_amount, 0)

@@ -56,6 +56,17 @@ Session updates go to `SNAPSHOT.md`. This file holds unchanging contracts.
 - **Nav:** `components/nav/UserMenu.tsx` (client) handles avatar button + dropdown (My profile → `/settings`, Sign out). Passed `email` prop from server layout. Clicking outside closes it.
 - **Validation pattern (onboarding forms):** Validate on submit attempt. After first failed attempt, re-validate on each field change so errors clear as user fixes them. Submit button disabled while `!isFormValid || loading`. Errors shown inline below fields as `text-red-500 text-sm`, not a banner.
 
+## Demo System
+- `DEMO_USER_EMAIL` / `DEMO_USER_PASSWORD` / `DEMO_USER_ID` in env.
+- `POST /api/demo/full` — signs in demo user, sets session cookie, routes to `/demo-preview`.
+- `POST /api/demo/temp` — `signInAnonymously()`, routes to `/onboarding/step-1`.
+- `/demo-preview` — protected page, only renders for `DEMO_USER_ID`. Others redirected to `/dashboard`.
+- `scripts/seed.ts --demo-user` — idempotent seed for demo account. Run with `npx ts-node --project tsconfig.scripts.json`.
+
+## Routing Gate (updated)
+- `/` and `/auth/callback`: No profile row → `/onboarding/step-1`. Profile exists → `/dashboard`.
+- Dashboard handles incomplete state inline via yellow banners (no twin → step-2 CTA, no goal → step-3 CTA).
+
 ## Gaps & Limits
-- Progressive onboarding gate check at `/` and `/auth/callback` missing deep check.
 - City list in Step-1 hardcoded to 20 items.
+- Demo user's twin_analyses not pre-seeded (dashboard will trigger analyze-twin on first load).

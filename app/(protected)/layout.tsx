@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
+import Link from 'next/link'
 import UserMenu from '@/components/nav/UserMenu'
 
 export default async function ProtectedLayout({
@@ -26,9 +27,9 @@ export default async function ProtectedLayout({
         className="sticky top-0 z-10 h-14"
       >
         <div className="mx-auto max-w-4xl px-4 h-full flex items-center justify-between">
-          <span className="font-semibold text-lg" style={{ color: 'var(--text-primary)' }}>
+          <Link href="/dashboard" className="font-semibold text-lg" style={{ color: 'var(--text-primary)' }}>
             A₹tha
-          </span>
+          </Link>
           <UserMenu email={email} />
         </div>
       </nav>
