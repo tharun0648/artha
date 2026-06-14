@@ -62,19 +62,20 @@ export default function Step3Page() {
   const [selectedGoal, setSelectedGoal] = useState<GoalType | null>(null)
   const [targetAmount, setTargetAmount] = useState(0)
   const [targetYear, setTargetYear] = useState(CURRENT_YEAR + 10)
+  const [twinSurplus, setTwinSurplus] = useState(0)
+  const [twinSavings, setTwinSavings] = useState(0)
+  const [selectedSubs, setSelectedSubs] = useState<SubscriptionRow[]>([])
 
   const realisticYear = useMemo(
     () => targetAmount > 0 ? calculateRealisticYear(targetAmount, twinSurplus, twinSavings) : null,
     [targetAmount, twinSurplus, twinSavings]
   )
 
-  const [twinSurplus, setTwinSurplus] = useState(0)
-  const [twinSavings, setTwinSavings] = useState(0)
-
-  const [selectedSubs, setSelectedSubs] = useState<SubscriptionRow[]>([])
-
-  const [error, setError] = useState<string | null>(null)
+  const [errors, setErrors] = useState<{ goal?: string; amount?: string }>({})
+  const [attempted, setAttempted] = useState(false)
   const [loading, setLoading] = useState(false)
+
+  const isFormValid = selectedGoal !== null && targetAmount > 0
 
   useEffect(() => {
     async function fetchTwin() {
@@ -105,13 +106,31 @@ export default function Step3Page() {
     setSelectedSubs(subs)
   }, [])
 
+  function validateGoalForm(goal: GoalType | null, amount: number): { goal?: string; amount?: string } {
+    const e: { goal?: string; amount?: string } = {}
+    if (!goal) e.goal = 'Please select your primary goal'
+    if (!amount || amount <= 0) e.amount = 'Please enter a target amount'
+    return e
+  }
+
+  function handleGoalSelect(goal: GoalType) {
+    setSelectedGoal(goal)
+    if (attempted) setErrors(validateGoalForm(goal, targetAmount))
+  }
+
+  function handleAmountChange(amount: number) {
+    setTargetAmount(amount)
+    if (attempted) setErrors(validateGoalForm(selectedGoal, amount))
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    setError(null)
-
-    if (!selectedGoal) { setError('Please select your primary goal.'); return }
-    if (!targetAmount || targetAmount <= 0) { setError('Please enter your target amount.'); return }
-    if (targetYear <= CURRENT_YEAR) { setError('Target year must be in the future.'); return }
+    setAttempted(true)
+    const errs = validateGoalForm(selectedGoal, targetAmount)
+    if (Object.keys(errs).length > 0) {
+      setErrors(errs)
+      return
+    }
 
     setLoading(true)
     const supabase = createClient()
@@ -122,7 +141,7 @@ export default function Step3Page() {
       { user_id: user.id, primary_goal: selectedGoal, goal_target_amount: targetAmount, goal_target_year: targetYear },
       { onConflict: 'user_id' }
     )
-    if (twinError) { setError(twinError.message); setLoading(false); return }
+    if (twinError) { setErrors({ goal: twinError.message }); setLoading(false); return }
 
     await supabase.from('subscriptions').delete().eq('user_id', user.id)
 
@@ -130,7 +149,7 @@ export default function Step3Page() {
       const { error: subError } = await supabase.from('subscriptions').insert(
         selectedSubs.map(sub => ({ user_id: user.id, name: sub.name, monthly_amount: sub.monthly_amount, category: sub.category, is_active: true }))
       )
-      if (subError) { setError(subError.message); setLoading(false); return }
+      if (subError) { setErrors({ goal: subError.message }); setLoading(false); return }
     }
 
     fetch('/api/analyze-twin', { method: 'POST' }).catch(() => {})
@@ -161,10 +180,10 @@ export default function Step3Page() {
               <button
                 key={opt.value}
                 type="button"
-                onClick={() => setSelectedGoal(opt.value)}
+                onClick={() => handleGoalSelect(opt.value)}
                 className="flex flex-col items-center gap-2 p-4 rounded-xl border transition-colors"
                 style={{
-                  borderColor: selectedGoal === opt.value ? 'var(--brand)' : 'var(--border)',
+                  borderColor: selectedGoal === opt.value ? 'var(--brand)' : errors.goal ? '#ef4444' : 'var(--border)',
                   background: selectedGoal === opt.value ? 'var(--brand-soft)' : 'var(--bg-surface)',
                 }}
               >
@@ -177,10 +196,10 @@ export default function Step3Page() {
             ))}
             <button
               type="button"
-              onClick={() => setSelectedGoal(GOAL_OPTIONS[4].value)}
+              onClick={() => handleGoalSelect(GOAL_OPTIONS[4].value)}
               className="flex flex-col items-center gap-2 p-4 rounded-xl border transition-colors"
               style={{
-                borderColor: selectedGoal === GOAL_OPTIONS[4].value ? 'var(--brand)' : 'var(--border)',
+                borderColor: selectedGoal === GOAL_OPTIONS[4].value ? 'var(--brand)' : errors.goal ? '#ef4444' : 'var(--border)',
                 background: selectedGoal === GOAL_OPTIONS[4].value ? 'var(--brand-soft)' : 'var(--bg-surface)',
               }}
             >
@@ -191,6 +210,7 @@ export default function Step3Page() {
               </span>
             </button>
           </div>
+          {errors.goal && <p className="text-red-500 text-sm mb-3">{errors.goal}</p>}
 
           {/* Target amount */}
           <div className="mt-5">
@@ -200,7 +220,7 @@ export default function Step3Page() {
                 <button
                   key={chip.label}
                   type="button"
-                  onClick={() => setTargetAmount(chip.value)}
+                  onClick={() => handleAmountChange(chip.value)}
                   className="flex-shrink-0 px-3 py-1.5 rounded-full text-sm font-medium transition-colors"
                   style={{
                     background: targetAmount === chip.value ? 'var(--brand)' : 'var(--bg-surface-secondary)',
@@ -219,16 +239,17 @@ export default function Step3Page() {
                 type="number"
                 min={1}
                 value={targetAmount === 0 ? '' : targetAmount}
-                onChange={e => setTargetAmount(e.target.value === '' ? 0 : Number(e.target.value))}
+                onChange={e => handleAmountChange(e.target.value === '' ? 0 : Number(e.target.value))}
                 placeholder="Custom amount"
                 className="w-full rounded-xl border"
                 style={{
                   paddingLeft: '28px', paddingRight: '12px', paddingTop: '10px', paddingBottom: '10px',
-                  borderColor: 'var(--border)', background: 'var(--bg-surface)',
+                  borderColor: errors.amount ? '#ef4444' : 'var(--border)', background: 'var(--bg-surface)',
                   color: 'var(--text-primary)', fontSize: '14px', outline: 'none',
                 }}
               />
             </div>
+            {errors.amount && <p className="text-red-500 text-sm mt-1">{errors.amount}</p>}
           </div>
 
           {/* Target year */}
@@ -264,20 +285,13 @@ export default function Step3Page() {
           <SubscriptionPicker onChange={handleSubsChange} />
         </div>
 
-        {error && (
-          <p className="text-sm rounded-xl px-3 py-2"
-             style={{ color: 'var(--risk-high)', background: '#FDF2F0' }}>
-            {error}
-          </p>
-        )}
-
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || !isFormValid}
           className="w-full text-white font-semibold transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
           style={{ background: 'var(--brand)', height: '52px', borderRadius: '12px' }}
-          onMouseOver={e => !loading && ((e.target as HTMLElement).style.background = 'var(--brand-hover)')}
-          onMouseOut={e => !loading && ((e.target as HTMLElement).style.background = 'var(--brand)')}
+          onMouseOver={e => !(loading || !isFormValid) && ((e.target as HTMLElement).style.background = 'var(--brand-hover)')}
+          onMouseOut={e => !(loading || !isFormValid) && ((e.target as HTMLElement).style.background = 'var(--brand)')}
         >
           {loading ? 'Building your twin…' : 'Build My Financial Twin →'}
         </button>

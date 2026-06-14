@@ -24,18 +24,26 @@ export default function StepIndicator({ currentStep }: StepIndicatorProps) {
               <div
                 className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-colors ${
                   isCompleted
-                    ? 'bg-[#1e1847] text-white'
+                    ? 'text-white'
                     : isActive
-                    ? 'bg-[#1e1847] text-white ring-4 ring-[#1e1847]/20'
+                    ? 'text-white'
                     : 'bg-gray-100 text-gray-400'
                 }`}
+                style={
+                  isCompleted
+                    ? { background: 'var(--brand)' }
+                    : isActive
+                    ? { background: 'var(--brand)', boxShadow: '0 0 0 4px var(--brand-soft)' }
+                    : undefined
+                }
               >
                 {isCompleted ? <Check size={14} strokeWidth={2.5} /> : stepNum}
               </div>
               <span
                 className={`text-xs mt-1 font-medium whitespace-nowrap ${
-                  isActive ? 'text-[#1e1847]' : isCompleted ? 'text-gray-600' : 'text-gray-400'
+                  isCompleted ? 'text-gray-600' : 'text-gray-400'
                 }`}
+                style={isActive ? { color: 'var(--brand)' } : undefined}
               >
                 {step.label}
               </span>
@@ -43,8 +51,9 @@ export default function StepIndicator({ currentStep }: StepIndicatorProps) {
             {idx < STEPS.length - 1 && (
               <div
                 className={`flex-1 h-0.5 mx-2 mb-4 transition-colors ${
-                  stepNum < currentStep ? 'bg-[#1e1847]' : 'bg-gray-200'
+                  stepNum < currentStep ? '' : 'bg-gray-200'
                 }`}
+                style={stepNum < currentStep ? { background: 'var(--brand)' } : undefined}
               />
             )}
           </div>

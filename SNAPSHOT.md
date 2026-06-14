@@ -64,3 +64,19 @@ Client page + Twin Sidebar + 5 Native Action Chips:
 4. ~~**Task: Clean Compilation Warnings** — Done (2026-06-14)~~
    - Step-3 `realisticYear` moved to `useMemo`; effect reduced to single `setTargetYear` call.
    - `seed.ts` explicit `any` replaced: `MarketReturnRow` type, `ResidexItem` type, `catch` blocks use `unknown`.
+
+5. ~~**Task: Dark Background Fix** — Done (2026-06-14)~~
+   - `StepIndicator.tsx` replaced `bg-[#1e1847]` (dark navy) with `var(--brand)` on step circles and connector bar.
+
+6. ~~**Task: Onboarding Inline Validation** — Done (2026-06-14)~~
+   - All three onboarding steps now validate on submit attempt with per-field inline errors (`text-red-500 text-sm`).
+   - After a failed attempt, errors re-validate on each field change so they clear as user fixes them.
+   - Submit button disabled when `!isFormValid || loading`.
+   - Step 1: age (18–60), city (required), company type (required).
+   - Step 2: income (> 0), all expense/asset fields (≥ 0). `RupeeInput` accepts `error` prop.
+   - Step 3: goal type (required), goal amount (> 0). Old error banner removed.
+
+7. ~~**Task: UserMenu Dropdown Nav** — Done (2026-06-14)~~
+   - Created `components/nav/UserMenu.tsx` (client component): avatar button + dropdown (My profile → `/settings`, Sign out with `LogOut` icon).
+   - `app/(protected)/layout.tsx` converted to pass `email` prop; Settings link removed.
+   - Outside-click closes dropdown via `mousedown` listener on `document`.

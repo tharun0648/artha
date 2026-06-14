@@ -50,7 +50,12 @@ Session updates go to `SNAPSHOT.md`. This file holds unchanging contracts.
 
 ---
 
+## UI Contracts
+- **Theme:** Light only (Ivory/sage palette). All colors via CSS variables (`var(--bg-page)`, `var(--brand)`, etc.) — never hardcoded hex or Tailwind dark values.
+- **StepIndicator:** Uses `var(--brand)` for active/completed steps. No hardcoded dark colors.
+- **Nav:** `components/nav/UserMenu.tsx` (client) handles avatar button + dropdown (My profile → `/settings`, Sign out). Passed `email` prop from server layout. Clicking outside closes it.
+- **Validation pattern (onboarding forms):** Validate on submit attempt. After first failed attempt, re-validate on each field change so errors clear as user fixes them. Submit button disabled while `!isFormValid || loading`. Errors shown inline below fields as `text-red-500 text-sm`, not a banner.
+
 ## Gaps & Limits
-- Light theme only (Ivory/sage palette, no dark mode invert).
 - Progressive onboarding gate check at `/` and `/auth/callback` missing deep check.
 - City list in Step-1 hardcoded to 20 items.

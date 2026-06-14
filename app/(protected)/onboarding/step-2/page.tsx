@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import StepIndicator from '@/components/onboarding/StepIndicator'
@@ -29,6 +29,7 @@ function RupeeInput({
   optional,
   value,
   onChange,
+  error,
 }: {
   id: string
   label: string
@@ -36,6 +37,7 @@ function RupeeInput({
   optional?: boolean
   value: number
   onChange: (v: number) => void
+  error?: string
 }) {
   return (
     <div>
@@ -72,7 +74,7 @@ function RupeeInput({
             paddingRight: '12px',
             paddingTop: '10px',
             paddingBottom: '10px',
-            borderColor: 'var(--border)',
+            borderColor: error ? '#ef4444' : 'var(--border)',
             background: 'var(--bg-surface)',
             color: 'var(--text-primary)',
             fontSize: '14px',
@@ -80,8 +82,36 @@ function RupeeInput({
           }}
         />
       </div>
+      {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
     </div>
   )
+}
+
+type FieldErrors = {
+  income?: string
+  rent?: string
+  food?: string
+  other?: string
+  emi?: string
+  savings?: string
+}
+
+function validateFields(
+  income: number,
+  rent: number,
+  food: number,
+  other: number,
+  emi: number,
+  savings: number
+): FieldErrors {
+  const e: FieldErrors = {}
+  if (income <= 0) e.income = 'Monthly take-home must be greater than 0'
+  if (rent < 0 || isNaN(rent)) e.rent = 'Rent must be 0 or more'
+  if (food < 0 || isNaN(food)) e.food = 'Food must be 0 or more'
+  if (other < 0 || isNaN(other)) e.other = 'This field must be 0 or more'
+  if (emi < 0 || isNaN(emi)) e.emi = 'EMI must be 0 or more'
+  if (savings < 0 || isNaN(savings)) e.savings = 'Savings must be 0 or more'
+  return e
 }
 
 export default function Step2Page() {
@@ -97,18 +127,43 @@ export default function Step2Page() {
   const [equity, setEquity] = useState(0)
   const [epf, setEpf] = useState(0)
 
-  const [error, setError] = useState<string | null>(null)
+  const [errors, setErrors] = useState<FieldErrors>({})
+  const [attempted, setAttempted] = useState(false)
   const [loading, setLoading] = useState(false)
 
   const surplus = monthlyIncome - rent - food - other - emi
   const surplusPositive = surplus >= 0
 
+  const isFormValid = monthlyIncome > 0
+
+  const revalidate = useCallback(
+    (inc: number, r: number, f: number, o: number, e: number, s: number) => {
+      if (attempted) setErrors(validateFields(inc, r, f, o, e, s))
+    },
+    [attempted]
+  )
+
+  function makeHandler<T extends number>(setter: (v: T) => void, field: 'income' | 'rent' | 'food' | 'other' | 'emi' | 'savings') {
+    return (v: number) => {
+      setter(v as T)
+      const next = {
+        income: field === 'income' ? v : monthlyIncome,
+        rent: field === 'rent' ? v : rent,
+        food: field === 'food' ? v : food,
+        other: field === 'other' ? v : other,
+        emi: field === 'emi' ? v : emi,
+        savings: field === 'savings' ? v : savings,
+      }
+      revalidate(next.income, next.rent, next.food, next.other, next.emi, next.savings)
+    }
+  }
+
   async function handleNext(e: React.FormEvent) {
     e.preventDefault()
-    setError(null)
-
-    if (monthlyIncome <= 0) {
-      setError('Monthly income must be greater than 0.')
+    setAttempted(true)
+    const errs = validateFields(monthlyIncome, rent, food, other, emi, savings)
+    if (Object.keys(errs).length > 0) {
+      setErrors(errs)
       return
     }
 
@@ -140,7 +195,7 @@ export default function Step2Page() {
     )
 
     if (dbError) {
-      setError(dbError.message)
+      setErrors({ income: dbError.message })
       setLoading(false)
       return
     }
@@ -174,7 +229,8 @@ export default function Step2Page() {
                 id="income"
                 label="Monthly take-home salary"
                 value={monthlyIncome}
-                onChange={setMonthlyIncome}
+                onChange={makeHandler(setMonthlyIncome, 'income')}
+                error={errors.income}
               />
               <RupeeInput
                 id="last-income"
@@ -194,13 +250,15 @@ export default function Step2Page() {
                 id="rent"
                 label="Total rent & housing"
                 value={rent}
-                onChange={setRent}
+                onChange={makeHandler(setRent, 'rent')}
+                error={errors.rent}
               />
               <RupeeInput
                 id="food"
                 label="Food, dining & groceries"
                 value={food}
-                onChange={setFood}
+                onChange={makeHandler(setFood, 'food')}
+                error={errors.food}
               />
               <div>
                 <label style={labelStyle} htmlFor="other">
@@ -217,18 +275,24 @@ export default function Step2Page() {
                     type="number"
                     min={0}
                     value={other === 0 ? '' : other}
-                    onChange={e => setOther(e.target.value === '' ? 0 : Number(e.target.value))}
+                    onChange={e => makeHandler(setOther, 'other')(e.target.value === '' ? 0 : Number(e.target.value))}
                     placeholder="0"
                     className="w-full rounded-xl border"
-                    style={{ paddingLeft: '28px', paddingRight: '12px', paddingTop: '10px', paddingBottom: '10px', borderColor: 'var(--border)', background: 'var(--bg-surface)', color: 'var(--text-primary)', fontSize: '14px', outline: 'none' }}
+                    style={{
+                      paddingLeft: '28px', paddingRight: '12px', paddingTop: '10px', paddingBottom: '10px',
+                      borderColor: errors.other ? '#ef4444' : 'var(--border)',
+                      background: 'var(--bg-surface)', color: 'var(--text-primary)', fontSize: '14px', outline: 'none',
+                    }}
                   />
                 </div>
+                {errors.other && <p className="text-red-500 text-sm mt-1">{errors.other}</p>}
               </div>
               <RupeeInput
                 id="emi"
                 label="Total EMIs"
                 value={emi}
-                onChange={setEmi}
+                onChange={makeHandler(setEmi, 'emi')}
+                error={errors.emi}
               />
             </div>
           </section>
@@ -257,7 +321,8 @@ export default function Step2Page() {
                 id="savings"
                 label="Savings & FD"
                 value={savings}
-                onChange={setSavings}
+                onChange={makeHandler(setSavings, 'savings')}
+                error={errors.savings}
               />
               <RupeeInput
                 id="equity"
@@ -278,22 +343,13 @@ export default function Step2Page() {
             </div>
           </section>
 
-          {error && (
-            <p
-              className="text-sm rounded-xl px-3 py-2"
-              style={{ color: 'var(--risk-high)', background: '#FDF2F0' }}
-            >
-              {error}
-            </p>
-          )}
-
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || !isFormValid}
             className="w-full text-white font-semibold transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
             style={{ background: 'var(--brand)', height: '52px', borderRadius: '12px' }}
-            onMouseOver={e => !loading && ((e.target as HTMLElement).style.background = 'var(--brand-hover)')}
-            onMouseOut={e => !loading && ((e.target as HTMLElement).style.background = 'var(--brand)')}
+            onMouseOver={e => !(loading || !isFormValid) && ((e.target as HTMLElement).style.background = 'var(--brand-hover)')}
+            onMouseOut={e => !(loading || !isFormValid) && ((e.target as HTMLElement).style.background = 'var(--brand)')}
           >
             {loading ? 'Saving…' : 'Save & continue →'}
           </button>

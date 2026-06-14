@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { CompanyType, RiskAppetite } from '@/types/twin'
@@ -40,29 +40,63 @@ const labelStyle = {
   marginBottom: '6px',
 }
 
+type FieldErrors = {
+  age?: string
+  city?: string
+  companyType?: string
+}
+
+function validate(age: number | '', city: string, companyType: CompanyType | ''): FieldErrors {
+  const e: FieldErrors = {}
+  if (age === '' || typeof age !== 'number' || age < 18 || age > 60) {
+    e.age = 'Age must be between 18 and 60'
+  }
+  if (!city) e.city = 'Please select your city'
+  if (!companyType) e.companyType = 'Please select your company type'
+  return e
+}
+
 export default function Step1Form({ cities }: { cities: string[] }) {
   const router = useRouter()
   const [age, setAge] = useState<number | ''>('')
   const [city, setCity] = useState('')
   const [companyType, setCompanyType] = useState<CompanyType | ''>('')
   const [riskIndex, setRiskIndex] = useState(1)
-  const [error, setError] = useState<string | null>(null)
+  const [errors, setErrors] = useState<FieldErrors>({})
+  const [attempted, setAttempted] = useState(false)
   const [loading, setLoading] = useState(false)
+
+  const errs = validate(age, city, companyType)
+  const isFormValid = Object.keys(errs).length === 0
+
+  const revalidate = useCallback(
+    (nextAge: number | '', nextCity: string, nextCompanyType: CompanyType | '') => {
+      if (attempted) setErrors(validate(nextAge, nextCity, nextCompanyType))
+    },
+    [attempted]
+  )
+
+  function handleAgeChange(val: number | '') {
+    setAge(val)
+    revalidate(val, city, companyType)
+  }
+
+  function handleCityChange(val: string) {
+    setCity(val)
+    revalidate(age, val, companyType)
+  }
+
+  function handleCompanyTypeChange(val: CompanyType) {
+    setCompanyType(val)
+    revalidate(age, city, val)
+  }
 
   async function handleNext(e: React.FormEvent) {
     e.preventDefault()
-    setError(null)
-
-    if (!age || age < 18 || age > 60) {
-      setError('Age must be between 18 and 60.')
-      return
-    }
-    if (!city) {
-      setError('Please select your city.')
-      return
-    }
-    if (!companyType) {
-      setError('Please select your company type.')
+    setAttempted(true)
+    const errs = validate(age, city, companyType)
+    if (Object.keys(errs).length > 0) {
+      setErrors(errs)
       return
     }
 
@@ -84,7 +118,7 @@ export default function Step1Form({ cities }: { cities: string[] }) {
     })
 
     if (dbError) {
-      setError(dbError.message)
+      setErrors({ age: dbError.message })
       setLoading(false)
       return
     }
@@ -119,21 +153,26 @@ export default function Step1Form({ cities }: { cities: string[] }) {
                 type="number"
                 min={18}
                 max={60}
-                required
                 value={age}
-                onChange={e => setAge(e.target.value === '' ? '' : Number(e.target.value))}
+                onChange={e => handleAgeChange(e.target.value === '' ? '' : Number(e.target.value))}
                 placeholder="27"
-                style={inputStyle}
+                style={{
+                  ...inputStyle,
+                  borderColor: errors.age ? '#ef4444' : 'var(--border)',
+                }}
               />
+              {errors.age && <p className="text-red-500 text-sm mt-1">{errors.age}</p>}
             </div>
             <div style={{ flex: 1 }}>
               <label style={labelStyle} htmlFor="city">City</label>
               <select
                 id="city"
-                required
                 value={city}
-                onChange={e => setCity(e.target.value)}
-                style={inputStyle}
+                onChange={e => handleCityChange(e.target.value)}
+                style={{
+                  ...inputStyle,
+                  borderColor: errors.city ? '#ef4444' : 'var(--border)',
+                }}
               >
                 <option value="">Select city</option>
                 {cities.map(c => (
@@ -142,6 +181,7 @@ export default function Step1Form({ cities }: { cities: string[] }) {
                   </option>
                 ))}
               </select>
+              {errors.city && <p className="text-red-500 text-sm mt-1">{errors.city}</p>}
             </div>
           </div>
 
@@ -153,11 +193,11 @@ export default function Step1Form({ cities }: { cities: string[] }) {
                 <button
                   key={opt.value}
                   type="button"
-                  onClick={() => setCompanyType(opt.value)}
+                  onClick={() => handleCompanyTypeChange(opt.value)}
                   className="rounded-xl border font-medium text-sm transition-colors"
                   style={{
                     height: '44px',
-                    borderColor: companyType === opt.value ? 'var(--brand)' : 'var(--border)',
+                    borderColor: companyType === opt.value ? 'var(--brand)' : errors.companyType ? '#ef4444' : 'var(--border)',
                     background: companyType === opt.value ? 'var(--brand)' : 'var(--bg-surface)',
                     color: companyType === opt.value ? '#fff' : 'var(--text-primary)',
                   }}
@@ -166,6 +206,7 @@ export default function Step1Form({ cities }: { cities: string[] }) {
                 </button>
               ))}
             </div>
+            {errors.companyType && <p className="text-red-500 text-sm mt-1">{errors.companyType}</p>}
           </div>
 
           {/* Risk appetite — slider */}
@@ -191,20 +232,13 @@ export default function Step1Form({ cities }: { cities: string[] }) {
             </div>
           </div>
 
-          {error && (
-            <p className="text-sm rounded-xl px-3 py-2"
-               style={{ color: 'var(--risk-high)', background: '#FDF2F0' }}>
-              {error}
-            </p>
-          )}
-
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || !isFormValid}
             className="w-full text-white font-semibold transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
             style={{ background: 'var(--brand)', height: '52px', borderRadius: '12px' }}
-            onMouseOver={e => !loading && ((e.target as HTMLElement).style.background = 'var(--brand-hover)')}
-            onMouseOut={e => !loading && ((e.target as HTMLElement).style.background = 'var(--brand)')}
+            onMouseOver={e => !(loading || !isFormValid) && ((e.target as HTMLElement).style.background = 'var(--brand-hover)')}
+            onMouseOut={e => !(loading || !isFormValid) && ((e.target as HTMLElement).style.background = 'var(--brand)')}
           >
             {loading ? 'Saving…' : 'Build my Twin →'}
           </button>
