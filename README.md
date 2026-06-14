@@ -16,24 +16,23 @@ twin in real time.
 
 ## Core Flow
 
-1. Build your Financial Digital Twin (3-step onboarding + Indian subscription picker)
-2. A₹tha analyzes the twin — deterministic math on real Indian data, then Groq for
-   causal reasoning. Output: goal probability %, causal attribution, health score.
-3. Enter the Decision Lab — one interface, ask anything. "What if I do an MBA?"
-   Get net worth at 5yr/10yr, break-even year, goal impact — grounded in your twin.
-4. Twin persists. Trajectory evolves as salary and decisions change.
+1. **Build your Financial Digital Twin** — 3-step onboarding (profile → financial data → goals + subscriptions)
+2. **Get your analysis** — A₹tha runs deterministic math on real Indian data, then Groq for causal reasoning
+3. **View your verdict** — Goal probability %, causal attribution breakdown, health score
+4. **Simulate decisions** — Decision Lab for what-if scenarios (MBA, home purchase, job switch, spend checks, card recommendations)
+5. **Track progress** — Your twin persists and evolves as your salary and decisions change
 
 ## Tech Stack
 
 | Layer       | Technology                          |
 |-------------|-------------------------------------|
-| Framework   | Next.js 16 (App Router) + React 19  |
+| Framework   | Next.js 16.2.9 (App Router) + React 19  |
 | Language    | TypeScript                          |
 | Styling     | Tailwind v4 + CSS Variables         |
 | Icons       | Lucide React                        |
 | Backend     | Supabase (PostgreSQL + Auth)        |
 | AI          | Groq — llama-3.3-70b-versatile      |
-| Design      | Design System v2 (Inter, sage/ivory) |
+| Design      | Design System v2 (Inter, sage/ivory, light theme only) |
 
 ## Architecture Principle
 
@@ -59,8 +58,10 @@ Reference tables are authenticated read-only.
 ## API Routes
 
 - `/api/analyze-twin` — Core analysis endpoint (financial math + Groq reasoning)
-- `/api/simulate` — Decision Lab endpoint for what-if scenarios (not implemented)
-- `/api/spend-check` — Purchase analysis endpoint (not implemented)
+- `/api/simulate` — Decision Lab endpoint for what-if scenarios (5y/10y net worth paths)
+- `/api/spend-check` — Purchase analysis: server math for EMI breach + 10yr opportunity cost, Groq for narrative
+- `/api/credit-card` — Credit card matching (no LLM, uses local scoring function)
+- `/api/chat` — Conversational interface (text mode, no JSON)
 
 ## Project Structure
 artha/
@@ -93,6 +94,13 @@ GROQ_API_KEY=                      # Groq API key (gsk_...)
 - **Term premiums** — HDFC Life + Max Life online calculators (manual)
 - **Tax slabs** — incometax.gov.in FY2024-25, both regimes (hardcoded)
 - **Credit cards** — curated dataset, 40+ Indian cards
+
+## Current Limitations
+
+- Light theme only (no dark mode)
+- City list in onboarding is hardcoded (20 cities)
+- Shallow onboarding gate check (partial progress may route to broken states)
+- No external chart or form libraries (custom UI only)
 
 ## What Was Cut for V1
 

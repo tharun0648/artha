@@ -46,7 +46,14 @@ async function seedMarketReturns() {
     return Math.pow(navToday / navPast, 1 / years) - 1
   }
 
-  const rows: any[] = []
+  type MarketReturnRow = {
+    instrument: string
+    period_years: number
+    cagr_pct: number
+    source: string
+    as_of_date: string
+  }
+  const rows: MarketReturnRow[] = []
 
   for (const scheme of schemes) {
     try {
@@ -70,7 +77,7 @@ async function seedMarketReturns() {
       console.log(`  ✓ ${scheme.instrument} (${scheme.code}) — fetched`)
       await new Promise(r => setTimeout(r, 400))
 
-    } catch (err) {
+    } catch {
       console.warn(`  ⚠️  ${scheme.instrument} (${scheme.code}) — failed, skipping`)
     }
   }
@@ -126,8 +133,15 @@ async function seedPropertyAppreciation() {
   const raw = fs.readFileSync(
     path.resolve(process.cwd(), 'scripts/data/nhb-residex.json'), 'utf-8'
   )
-  const items = JSON.parse(raw)
-  const rows = items.map((item: any) => ({
+  type ResidexItem = {
+    city: string
+    state: string
+    current_index: number
+    prev_year_index: number
+    as_of_quarter: string
+  }
+  const items: ResidexItem[] = JSON.parse(raw)
+  const rows = items.map(item => ({
     city: item.city,
     state: item.state,
     annual_appreciation_pct: parseFloat(
@@ -186,8 +200,8 @@ async function main() {
     await seedPropertyAppreciation()
     await seedTermPremiums()
     await seedCreditCards()
-  } catch (err) {
-    console.error('❌ Seed failed:', err)
+  } catch (err: unknown) {
+    console.error('❌ Seed failed:', err instanceof Error ? err.message : err)
     process.exit(1)
   }
 

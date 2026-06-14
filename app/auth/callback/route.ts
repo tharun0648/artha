@@ -15,14 +15,17 @@ export async function GET(request: NextRequest) {
       const { data: { user } } = await supabase.auth.getUser()
 
       if (user) {
-        const { data: twin } = await supabase
-          .from('financial_twin')
-          .select('id, primary_goal')
-          .eq('user_id', user.id)
-          .single()
+        const [{ data: profile }, { data: twin }] = await Promise.all([
+          supabase.from('profiles').select('id').eq('id', user.id).single(),
+          supabase.from('financial_twin').select('id, monthly_take_home, primary_goal').eq('user_id', user.id).single(),
+        ])
 
-        const hasCompletedOnboarding = twin?.primary_goal != null
-        const destination = hasCompletedOnboarding ? '/dashboard' : '/onboarding/step-1'
+        let destination: string
+        if (!profile) destination = '/onboarding/step-1'
+        else if (!twin || !twin.monthly_take_home) destination = '/onboarding/step-2'
+        else if (!twin.primary_goal) destination = '/onboarding/step-3'
+        else destination = '/dashboard'
+
         return NextResponse.redirect(`${origin}${destination}`)
       }
     }

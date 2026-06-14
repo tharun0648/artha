@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { GoalType } from '@/types/twin'
 import SubscriptionPicker, { SubscriptionRow } from '@/components/onboarding/SubscriptionPicker'
+import StepIndicator from '@/components/onboarding/StepIndicator'
 
 const GOAL_OPTIONS: { value: GoalType; emoji: string; label: string }[] = [
   { value: 'home', emoji: '🏠', label: 'Home' },
@@ -61,7 +62,11 @@ export default function Step3Page() {
   const [selectedGoal, setSelectedGoal] = useState<GoalType | null>(null)
   const [targetAmount, setTargetAmount] = useState(0)
   const [targetYear, setTargetYear] = useState(CURRENT_YEAR + 10)
-  const [realisticYear, setRealisticYear] = useState<number | null>(null)
+
+  const realisticYear = useMemo(
+    () => targetAmount > 0 ? calculateRealisticYear(targetAmount, twinSurplus, twinSavings) : null,
+    [targetAmount, twinSurplus, twinSavings]
+  )
 
   const [twinSurplus, setTwinSurplus] = useState(0)
   const [twinSavings, setTwinSavings] = useState(0)
@@ -91,12 +96,10 @@ export default function Step3Page() {
   }, [])
 
   useEffect(() => {
-    if (targetAmount > 0) {
-      const year = calculateRealisticYear(targetAmount, twinSurplus, twinSavings)
-      setRealisticYear(year)
-      setTargetYear(year)
+    if (realisticYear !== null) {
+      setTargetYear(realisticYear)
     }
-  }, [targetAmount, twinSurplus, twinSavings])
+  }, [realisticYear])
 
   const handleSubsChange = useCallback((subs: SubscriptionRow[]) => {
     setSelectedSubs(subs)
@@ -136,6 +139,7 @@ export default function Step3Page() {
 
   return (
     <div>
+      <StepIndicator currentStep={3} />
       <div className="mb-6">
         <h2 className="text-2xl font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>
           Your Goal

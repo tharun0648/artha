@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import StepIndicator from '@/components/onboarding/StepIndicator'
 
 const labelStyle = {
   display: 'block',
@@ -149,6 +150,7 @@ export default function Step2Page() {
 
   return (
     <div>
+      <StepIndicator currentStep={2} />
       <div className="mb-6">
         <h2 className="text-2xl font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>
           Money Model
