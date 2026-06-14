@@ -1,8 +1,8 @@
-// middleware.ts (root — this is what Next.js actually runs)
+// proxy.ts (root — this is what Next.js actually runs)
 import { createClient } from "@/lib/supabase/middleware";
 import { type NextRequest, NextResponse } from "next/server";
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
     const { supabaseResponse, supabase } = createClient(request);
 
     // Refresh session — required for Server Components to read auth state
