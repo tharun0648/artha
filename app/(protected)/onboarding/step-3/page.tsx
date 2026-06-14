@@ -1,19 +1,17 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Home, TrendingUp, Shield, Sunset, GraduationCap, Plus, X, Check } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import StepIndicator from '@/components/onboarding/StepIndicator'
-import { INDIAN_SUBSCRIPTIONS, SubscriptionTemplate } from '@/lib/subscriptions-data'
+import { INDIAN_SUBSCRIPTIONS } from '@/lib/subscriptions-data'
 import { GoalType } from '@/types/twin'
 
-const GOAL_OPTIONS: { value: GoalType; label: string; icon: React.ReactNode; emoji: string }[] = [
-  { value: 'home', label: 'Buy a Home', icon: <Home size={22} />, emoji: '🏠' },
-  { value: 'wealth', label: 'Build Wealth', icon: <TrendingUp size={22} />, emoji: '📈' },
-  { value: 'safety', label: 'Financial Safety', icon: <Shield size={22} />, emoji: '🛡️' },
-  { value: 'retirement', label: 'Early Retirement', icon: <Sunset size={22} />, emoji: '☀️' },
-  { value: 'education', label: 'Education', icon: <GraduationCap size={22} />, emoji: '🎓' },
+const GOAL_OPTIONS: { value: GoalType; emoji: string; label: string }[] = [
+  { value: 'home', emoji: '🏠', label: 'Home' },
+  { value: 'wealth', emoji: '📈', label: 'Wealth' },
+  { value: 'safety', emoji: '🛡', label: 'Safety' },
+  { value: 'retirement', emoji: '☀', label: 'Retirement' },
+  { value: 'education', emoji: '🎓', label: 'Education' },
 ]
 
 const AMOUNT_CHIPS = [
@@ -25,26 +23,40 @@ const AMOUNT_CHIPS = [
   { label: '₹5Cr', value: 50000000 },
 ]
 
+const SUB_CATEGORIES = [
+  { key: 'entertainment', label: 'Entertainment', options: INDIAN_SUBSCRIPTIONS.filter(s => s.category === 'entertainment') },
+  { key: 'music', label: 'Music', options: INDIAN_SUBSCRIPTIONS.filter(s => s.category === 'music') },
+  { key: 'food', label: 'Food delivery', options: INDIAN_SUBSCRIPTIONS.filter(s => s.category === 'food') },
+  { key: 'fitness', label: 'Fitness', options: INDIAN_SUBSCRIPTIONS.filter(s => s.category === 'fitness') },
+  { key: 'productivity', label: 'Productivity', options: INDIAN_SUBSCRIPTIONS.filter(s => s.category === 'productivity') },
+  { key: 'other', label: 'Other', options: INDIAN_SUBSCRIPTIONS.filter(s => ['lifestyle', 'news', 'telecom', 'airtel'].includes(s.category)) },
+]
+
 const CURRENT_YEAR = new Date().getFullYear()
 
-const CATEGORY_COLORS: Record<string, string> = {
-  entertainment: 'bg-purple-100 text-purple-700',
-  music: 'bg-pink-100 text-pink-700',
-  food: 'bg-orange-100 text-orange-700',
-  lifestyle: 'bg-blue-100 text-blue-700',
-  fitness: 'bg-green-100 text-green-700',
-  productivity: 'bg-yellow-100 text-yellow-700',
-  news: 'bg-gray-100 text-gray-700',
-  telecom: 'bg-cyan-100 text-cyan-700',
-  airtel: 'bg-red-100 text-red-700',
+function calculateTargetYear(goalAmount: number, monthlySurplus: number, currentSavings: number): number {
+  if (monthlySurplus <= 0) return CURRENT_YEAR + 10
+  for (let years = 1; years <= 30; years++) {
+    const projected = (monthlySurplus * 12 * years * 1.08) + (currentSavings * Math.pow(1.12, years))
+    if (projected >= goalAmount) return CURRENT_YEAR + years
+  }
+  return CURRENT_YEAR + 15
 }
 
-type SelectedSub = SubscriptionTemplate & { custom_amount: number }
+const labelStyle = {
+  fontSize: '13px',
+  fontWeight: 500,
+  color: 'var(--text-secondary)',
+  marginBottom: '6px',
+} as const
 
-function sipFV(monthly: number): number {
-  const rate = 0.125 / 12
-  const n = 120
-  return monthly * ((Math.pow(1 + rate, n) - 1) / rate) * (1 + rate)
+const sectionHeadStyle = {
+  fontSize: '11px',
+  fontWeight: 600,
+  textTransform: 'uppercase' as const,
+  letterSpacing: '0.06em',
+  color: 'var(--text-muted)',
+  marginBottom: '12px',
 }
 
 export default function Step3Page() {
@@ -53,92 +65,78 @@ export default function Step3Page() {
   const [selectedGoal, setSelectedGoal] = useState<GoalType | null>(null)
   const [targetAmount, setTargetAmount] = useState(0)
   const [targetYear, setTargetYear] = useState(CURRENT_YEAR + 10)
+  const [autoYear, setAutoYear] = useState<number | null>(null)
 
-  const [selectedSubs, setSelectedSubs] = useState<SelectedSub[]>([])
-  const [showCustomForm, setShowCustomForm] = useState(false)
-  const [customName, setCustomName] = useState('')
-  const [customAmount, setCustomAmount] = useState(0)
-  const [customCategory, setCustomCategory] = useState('lifestyle')
+  const [monthlySurplus, setMonthlySurplus] = useState(20000)
+  const [currentSavings, setCurrentSavings] = useState(0)
+
+  // category → selected sub id ('none' or sub.id)
+  const [catSelections, setCatSelections] = useState<Record<string, string>>(
+    Object.fromEntries(SUB_CATEGORIES.map(r => [r.key, 'none']))
+  )
 
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
-  function toggleSub(sub: SubscriptionTemplate) {
-    const exists = selectedSubs.find(s => s.id === sub.id)
-    if (exists) {
-      setSelectedSubs(prev => prev.filter(s => s.id !== sub.id))
-    } else {
-      setSelectedSubs(prev => [...prev, { ...sub, custom_amount: sub.monthly_amount }])
+  // Fetch twin data to power auto-calculate
+  useEffect(() => {
+    async function fetchTwin() {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const { data } = await supabase
+        .from('financial_twin')
+        .select('monthly_income,monthly_rent,monthly_food,monthly_transport,monthly_entertainment,monthly_other,total_monthly_emi,current_savings,equity_investments,epf_balance')
+        .eq('user_id', user.id)
+        .single()
+      if (data) {
+        const surplus = data.monthly_income - data.monthly_rent - data.monthly_food - data.monthly_transport - data.monthly_entertainment - data.monthly_other - data.total_monthly_emi
+        setMonthlySurplus(surplus > 0 ? surplus : 5000)
+        setCurrentSavings((data.current_savings || 0) + (data.equity_investments || 0) + (data.epf_balance || 0))
+      }
     }
-  }
+    fetchTwin()
+  }, [])
 
-  function updateSubAmount(id: string, amount: number) {
-    setSelectedSubs(prev => prev.map(s => s.id === id ? { ...s, custom_amount: amount } : s))
-  }
-
-  function addCustomSub() {
-    if (!customName.trim() || customAmount <= 0) return
-    const customSub: SelectedSub = {
-      id: `custom-${Date.now()}`,
-      name: customName.trim(),
-      category: customCategory,
-      monthly_amount: customAmount,
-      custom_amount: customAmount,
+  // Auto-calculate year when amount changes
+  useEffect(() => {
+    if (targetAmount > 0) {
+      const year = calculateTargetYear(targetAmount, monthlySurplus, currentSavings)
+      setAutoYear(year)
+      setTargetYear(year)
     }
-    setSelectedSubs(prev => [...prev, customSub])
-    setCustomName('')
-    setCustomAmount(0)
-    setShowCustomForm(false)
-  }
+  }, [targetAmount, monthlySurplus, currentSavings])
 
-  const totalMonthly = selectedSubs.reduce((s, sub) => s + sub.custom_amount, 0)
+  const selectedSubs = SUB_CATEGORIES.flatMap(row => {
+    const selectedId = catSelections[row.key]
+    if (selectedId === 'none') return []
+    return row.options.filter(o => o.id === selectedId)
+  })
+
+  const totalMonthly = selectedSubs.reduce((s, sub) => s + sub.monthly_amount, 0)
   const totalAnnual = totalMonthly * 12
-  const total10yr = sipFV(totalMonthly)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
 
-    if (!selectedGoal) {
-      setError('Please select your primary goal.')
-      return
-    }
-    if (!targetAmount || targetAmount <= 0) {
-      setError('Please enter your target amount.')
-      return
-    }
-    if (targetYear <= CURRENT_YEAR) {
-      setError('Target year must be in the future.')
-      return
-    }
+    if (!selectedGoal) { setError('Please select your primary goal.'); return }
+    if (!targetAmount || targetAmount <= 0) { setError('Please enter your target amount.'); return }
+    if (targetYear <= CURRENT_YEAR) { setError('Target year must be in the future.'); return }
 
     setLoading(true)
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
-    if (!user) {
-      router.push('/login')
-      return
-    }
+    if (!user) { router.push('/login'); return }
 
-    // Update twin with goal fields
     const { error: twinError } = await supabase.from('financial_twin').upsert(
-      {
-        user_id: user.id,
-        primary_goal: selectedGoal,
-        goal_target_amount: targetAmount,
-        goal_target_year: targetYear,
-      },
+      { user_id: user.id, primary_goal: selectedGoal, goal_target_amount: targetAmount, goal_target_year: targetYear },
       { onConflict: 'user_id' }
     )
 
-    if (twinError) {
-      setError(twinError.message)
-      setLoading(false)
-      return
-    }
+    if (twinError) { setError(twinError.message); setLoading(false); return }
 
-    // Replace all subscriptions for user
     await supabase.from('subscriptions').delete().eq('user_id', user.id)
 
     if (selectedSubs.length > 0) {
@@ -146,248 +144,219 @@ export default function Step3Page() {
         selectedSubs.map(sub => ({
           user_id: user.id,
           name: sub.name,
-          monthly_amount: sub.custom_amount,
+          monthly_amount: sub.monthly_amount,
           category: sub.category,
           is_active: true,
         }))
       )
-      if (subError) {
-        setError(subError.message)
-        setLoading(false)
-        return
-      }
+      if (subError) { setError(subError.message); setLoading(false); return }
     }
 
-    // Fire-and-forget: kick off analysis
     fetch('/api/analyze-twin', { method: 'POST' }).catch(() => {})
-
     router.push('/dashboard?analyzing=true')
   }
 
   return (
-    <div className="min-h-screen bg-[#f8f7ff] py-10 px-4">
-      <div className="max-w-2xl mx-auto">
-        <StepIndicator currentStep={3} />
+    <div>
+      <div className="mb-6">
+        <h2 className="text-2xl font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>
+          Your Goal
+        </h2>
+        <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+          What&apos;s the one financial goal that matters most right now?
+        </p>
+      </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Goal card */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-            <h2 className="text-xl font-semibold text-gray-900 mb-1">Your Goal</h2>
-            <p className="text-sm text-gray-500 mb-5">What&apos;s the one financial goal that matters most to you right now?</p>
+      <form onSubmit={handleSubmit} className="space-y-4">
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
-              {GOAL_OPTIONS.map(opt => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => setSelectedGoal(opt.value)}
-                  className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition ${
-                    selectedGoal === opt.value
-                      ? 'border-[#1e1847] bg-[#1e1847]/5'
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
+        {/* Goal card */}
+        <div className="rounded-2xl border p-5"
+             style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)', boxShadow: 'var(--shadow-md)' }}>
+
+          {/* 2×2 grid + 1 centered */}
+          <div className="grid grid-cols-2 gap-3 mb-3">
+            {GOAL_OPTIONS.slice(0, 4).map(opt => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => setSelectedGoal(opt.value)}
+                className="flex flex-col items-center gap-2 p-4 rounded-xl border transition-colors"
+                style={{
+                  borderColor: selectedGoal === opt.value ? 'var(--brand)' : 'var(--border)',
+                  background: selectedGoal === opt.value ? 'var(--brand-soft)' : 'var(--bg-surface)',
+                }}
+              >
+                <span className="text-2xl">{opt.emoji}</span>
+                <span
+                  className="text-xs font-semibold"
+                  style={{ color: selectedGoal === opt.value ? 'var(--brand)' : 'var(--text-primary)' }}
                 >
-                  <span className={`${selectedGoal === opt.value ? 'text-[#1e1847]' : 'text-gray-500'}`}>
-                    {opt.icon}
-                  </span>
-                  <span className={`text-xs font-semibold text-center ${selectedGoal === opt.value ? 'text-[#1e1847]' : 'text-gray-700'}`}>
-                    {opt.label}
-                  </span>
+                  {opt.label}
+                </span>
+              </button>
+            ))}
+          </div>
+          <div className="flex justify-center">
+            <button
+              type="button"
+              onClick={() => setSelectedGoal(GOAL_OPTIONS[4].value)}
+              className="flex flex-col items-center gap-2 p-4 rounded-xl border transition-colors"
+              style={{
+                width: 'calc(50% - 6px)',
+                borderColor: selectedGoal === GOAL_OPTIONS[4].value ? 'var(--brand)' : 'var(--border)',
+                background: selectedGoal === GOAL_OPTIONS[4].value ? 'var(--brand-soft)' : 'var(--bg-surface)',
+              }}
+            >
+              <span className="text-2xl">{GOAL_OPTIONS[4].emoji}</span>
+              <span
+                className="text-xs font-semibold"
+                style={{ color: selectedGoal === GOAL_OPTIONS[4].value ? 'var(--brand)' : 'var(--text-primary)' }}
+              >
+                {GOAL_OPTIONS[4].label}
+              </span>
+            </button>
+          </div>
+
+          {/* Target amount */}
+          <div className="mt-5">
+            <p style={{ ...labelStyle, display: 'block' }}>Target amount</p>
+            <div className="flex gap-2 overflow-x-auto pb-1" style={{ WebkitOverflowScrolling: 'touch' }}>
+              {AMOUNT_CHIPS.map(chip => (
+                <button
+                  key={chip.label}
+                  type="button"
+                  onClick={() => setTargetAmount(chip.value)}
+                  className="flex-shrink-0 px-3 py-1.5 rounded-full text-sm font-medium transition-colors"
+                  style={{
+                    background: targetAmount === chip.value ? 'var(--brand)' : 'var(--bg-surface-secondary)',
+                    color: targetAmount === chip.value ? '#fff' : 'var(--text-secondary)',
+                    border: `1px solid ${targetAmount === chip.value ? 'var(--brand)' : 'var(--border)'}`,
+                  }}
+                >
+                  {chip.label}
                 </button>
               ))}
             </div>
-
-            {/* Target amount */}
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Target amount</label>
-              <div className="flex flex-wrap gap-2 mb-3">
-                {AMOUNT_CHIPS.map(chip => (
-                  <button
-                    key={chip.label}
-                    type="button"
-                    onClick={() => setTargetAmount(chip.value)}
-                    className={`px-3 py-1.5 rounded-full text-sm font-medium transition ${
-                      targetAmount === chip.value
-                        ? 'bg-[#1e1847] text-white'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                    }`}
-                  >
-                    {chip.label}
-                  </button>
-                ))}
-              </div>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm font-medium select-none">₹</span>
-                <input
-                  type="number"
-                  min={1}
-                  value={targetAmount === 0 ? '' : targetAmount}
-                  onChange={e => setTargetAmount(e.target.value === '' ? 0 : Number(e.target.value))}
-                  className="w-full pl-7 pr-3 py-2.5 rounded-lg border border-gray-200 text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#1e1847]/30 focus:border-[#1e1847] transition"
-                  placeholder="Custom amount"
-                />
-              </div>
-            </div>
-
-            {/* Target year */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="target-year">
-                Target year
-              </label>
+            <div className="relative mt-3">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm select-none"
+                    style={{ color: 'var(--text-muted)' }}>₹</span>
               <input
-                id="target-year"
                 type="number"
-                min={CURRENT_YEAR + 1}
-                max={CURRENT_YEAR + 30}
-                value={targetYear}
-                onChange={e => setTargetYear(Number(e.target.value))}
-                className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#1e1847]/30 focus:border-[#1e1847] transition"
+                min={1}
+                value={targetAmount === 0 ? '' : targetAmount}
+                onChange={e => setTargetAmount(e.target.value === '' ? 0 : Number(e.target.value))}
+                placeholder="Custom amount"
+                className="w-full rounded-xl border"
+                style={{
+                  paddingLeft: '28px', paddingRight: '12px', paddingTop: '10px', paddingBottom: '10px',
+                  borderColor: 'var(--border)', background: 'var(--bg-surface)',
+                  color: 'var(--text-primary)', fontSize: '14px', outline: 'none',
+                }}
               />
             </div>
           </div>
 
-          {/* Subscriptions card */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-            <h2 className="text-xl font-semibold text-gray-900 mb-1">Your Subscriptions</h2>
-            <p className="text-sm text-gray-500 mb-5">Select all active subscriptions — tap to select, tap again to deselect.</p>
+          {/* Target year */}
+          <div className="mt-4">
+            {autoYear && targetAmount > 0 && (
+              <p className="text-xs mb-2" style={{ color: 'var(--text-muted)' }}>
+                Realistic by: <strong style={{ color: 'var(--brand)' }}>{autoYear}</strong> · Adjust if needed
+              </p>
+            )}
+            <p style={{ ...labelStyle, display: 'block' }}>Target year</p>
+            <input
+              type="number"
+              min={CURRENT_YEAR + 1}
+              max={CURRENT_YEAR + 30}
+              value={targetYear}
+              onChange={e => setTargetYear(Number(e.target.value))}
+              className="w-full rounded-xl border"
+              style={{
+                padding: '10px 12px', borderColor: 'var(--border)', background: 'var(--bg-surface)',
+                color: 'var(--text-primary)', fontSize: '14px', outline: 'none',
+              }}
+            />
+          </div>
+        </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
-              {INDIAN_SUBSCRIPTIONS.map(sub => {
-                const selected = selectedSubs.find(s => s.id === sub.id)
-                return (
-                  <div
-                    key={sub.id}
-                    className={`relative rounded-xl border-2 p-3 cursor-pointer transition ${
-                      selected
-                        ? 'border-[#1e1847] bg-[#1e1847]/5'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                    onClick={() => toggleSub(sub)}
+        {/* Subscriptions card */}
+        <div className="rounded-2xl border p-5"
+             style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)', boxShadow: 'var(--shadow-md)' }}>
+          <p style={sectionHeadStyle}>Subscriptions</p>
+          <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>
+            Select what you&apos;re subscribed to — one per category.
+          </p>
+
+          <div className="space-y-3">
+            {SUB_CATEGORIES.map(row => {
+              const selectedId = catSelections[row.key]
+              const selectedSub = row.options.find(o => o.id === selectedId)
+              return (
+                <div key={row.key} className="flex items-center gap-3">
+                  <span
+                    className="text-sm font-medium"
+                    style={{ width: '110px', flexShrink: 0, color: 'var(--text-secondary)' }}
                   >
-                    {selected && (
-                      <span className="absolute top-2 right-2 bg-[#1e1847] rounded-full p-0.5">
-                        <Check size={10} className="text-white" strokeWidth={3} />
-                      </span>
-                    )}
-                    <p className={`text-sm font-semibold mb-1 pr-5 ${selected ? 'text-[#1e1847]' : 'text-gray-800'}`}>
-                      {sub.name}
-                    </p>
-                    <span className={`inline-block text-xs px-2 py-0.5 rounded-full font-medium mb-2 ${CATEGORY_COLORS[sub.category] ?? 'bg-gray-100 text-gray-600'}`}>
-                      {sub.category}
-                    </span>
-                    {selected ? (
-                      <div
-                        className="relative mt-1"
-                        onClick={e => e.stopPropagation()}
-                      >
-                        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-500 text-xs select-none">₹</span>
-                        <input
-                          type="number"
-                          min={0}
-                          value={selected.custom_amount === 0 ? '' : selected.custom_amount}
-                          onChange={e => updateSubAmount(sub.id, e.target.value === '' ? 0 : Number(e.target.value))}
-                          className="w-full pl-5 pr-2 py-1 rounded-lg border border-[#1e1847]/30 text-sm text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e1847]/30 bg-white"
-                        />
-                      </div>
-                    ) : (
-                      <p className="text-sm text-gray-500 mt-1">₹{sub.monthly_amount}/mo</p>
-                    )}
-                  </div>
-                )
-              })}
-            </div>
-
-            {/* Custom subscription */}
-            {showCustomForm ? (
-              <div className="border-2 border-dashed border-gray-200 rounded-xl p-4 mb-4">
-                <div className="flex gap-2 mb-3">
-                  <input
-                    type="text"
-                    placeholder="Subscription name"
-                    value={customName}
-                    onChange={e => setCustomName(e.target.value)}
-                    className="flex-1 px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#1e1847]/30 focus:border-[#1e1847]"
-                  />
-                  <div className="relative w-28">
-                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-500 text-sm select-none">₹</span>
-                    <input
-                      type="number"
-                      min={0}
-                      placeholder="Amount"
-                      value={customAmount === 0 ? '' : customAmount}
-                      onChange={e => setCustomAmount(e.target.value === '' ? 0 : Number(e.target.value))}
-                      className="w-full pl-6 pr-2 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#1e1847]/30 focus:border-[#1e1847]"
-                    />
-                  </div>
-                </div>
-                <div className="flex gap-2">
+                    {row.label}
+                  </span>
                   <select
-                    value={customCategory}
-                    onChange={e => setCustomCategory(e.target.value)}
-                    className="flex-1 px-3 py-2 text-sm rounded-lg border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#1e1847]/30"
+                    value={selectedId}
+                    onChange={e => setCatSelections(prev => ({ ...prev, [row.key]: e.target.value }))}
+                    className="flex-1 rounded-xl border text-sm"
+                    style={{
+                      padding: '8px 10px', borderColor: 'var(--border)',
+                      background: 'var(--bg-surface)', color: 'var(--text-primary)', outline: 'none',
+                    }}
                   >
-                    <option value="entertainment">Entertainment</option>
-                    <option value="music">Music</option>
-                    <option value="food">Food</option>
-                    <option value="lifestyle">Lifestyle</option>
-                    <option value="fitness">Fitness</option>
-                    <option value="productivity">Productivity</option>
-                    <option value="news">News</option>
-                    <option value="telecom">Telecom</option>
+                    <option value="none">None</option>
+                    {row.options.map(opt => (
+                      <option key={opt.id} value={opt.id}>{opt.name}</option>
+                    ))}
                   </select>
-                  <button
-                    type="button"
-                    onClick={addCustomSub}
-                    className="px-4 py-2 bg-[#1e1847] text-white text-sm rounded-lg font-medium hover:bg-[#2d2568] transition"
+                  <span
+                    className="text-sm font-medium text-right"
+                    style={{ width: '52px', flexShrink: 0, color: selectedSub ? 'var(--text-primary)' : 'var(--text-muted)' }}
                   >
-                    Add
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowCustomForm(false)}
-                    className="p-2 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 transition"
-                  >
-                    <X size={16} />
-                  </button>
+                    {selectedSub ? `₹${selectedSub.monthly_amount}` : '₹0'}
+                  </span>
                 </div>
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setShowCustomForm(true)}
-                className="flex items-center gap-2 text-sm text-[#1e1847] font-medium hover:underline mb-4"
-              >
-                <Plus size={16} />
-                Add custom subscription
-              </button>
-            )}
-
-            {/* Running total */}
-            {totalMonthly > 0 && (
-              <div className="bg-amber-50 rounded-xl px-4 py-3 text-sm">
-                <p className="font-semibold text-amber-900">
-                  Total: ₹{totalMonthly.toLocaleString('en-IN')}/month · ₹{totalAnnual.toLocaleString('en-IN')}/year
-                </p>
-                <p className="text-amber-700 mt-0.5">
-                  ₹{Math.round(total10yr).toLocaleString('en-IN')} in 10 years if invested at 12.5% p.a.
-                </p>
-              </div>
-            )}
+              )
+            })}
           </div>
 
-          {error && (
-            <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>
+          {totalMonthly > 0 && (
+            <div
+              className="mt-4 rounded-xl px-4 py-3 text-sm"
+              style={{ background: 'var(--bg-surface-secondary)' }}
+            >
+              <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>
+                Total: ₹{totalMonthly.toLocaleString('en-IN')}/month
+              </span>
+              <span style={{ color: 'var(--text-muted)', marginLeft: '8px' }}>
+                · ₹{totalAnnual.toLocaleString('en-IN')}/year
+              </span>
+            </div>
           )}
+        </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-[#1e1847] text-white font-semibold py-3 rounded-xl hover:bg-[#2d2568] disabled:opacity-60 disabled:cursor-not-allowed transition text-base"
-          >
-            {loading ? 'Building your twin…' : 'Build My Financial Twin →'}
-          </button>
-        </form>
-      </div>
+        {error && (
+          <p className="text-sm rounded-xl px-3 py-2"
+             style={{ color: 'var(--risk-high)', background: '#FDF2F0' }}>
+            {error}
+          </p>
+        )}
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full text-white font-semibold transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+          style={{ background: 'var(--brand)', height: '52px', borderRadius: '12px' }}
+          onMouseOver={e => !loading && ((e.target as HTMLElement).style.background = 'var(--brand-hover)')}
+          onMouseOut={e => !loading && ((e.target as HTMLElement).style.background = 'var(--brand)')}
+        >
+          {loading ? 'Building your twin…' : 'Build My Financial Twin →'}
+        </button>
+      </form>
     </div>
   )
 }

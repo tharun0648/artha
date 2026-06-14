@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import StepIndicator from '@/components/onboarding/StepIndicator'
 import { CompanyType, RiskAppetite } from '@/types/twin'
 
 const CITIES = [
@@ -29,25 +28,46 @@ const CITIES = [
   { city: 'Gurugram', state: 'Haryana' },
 ]
 
-const COMPANY_TYPES: { value: CompanyType; label: string; desc: string }[] = [
-  { value: 'startup', label: 'Startup', desc: 'High growth, higher risk' },
-  { value: 'mnc', label: 'MNC', desc: 'Global corp, structured' },
-  { value: 'psu', label: 'PSU', desc: 'Government undertaking' },
-  { value: 'other', label: 'Other', desc: 'Self-employed / freelance' },
+const COMPANY_TYPES: { value: CompanyType; label: string }[] = [
+  { value: 'startup', label: 'Startup' },
+  { value: 'mnc', label: 'MNC' },
+  { value: 'psu', label: 'PSU' },
+  { value: 'other', label: 'Other' },
 ]
 
-const RISK_OPTIONS: { value: RiskAppetite; label: string; desc: string }[] = [
-  { value: 'conservative', label: 'Conservative', desc: 'I prefer safety over returns' },
-  { value: 'moderate', label: 'Moderate', desc: 'I want balance between growth and safety' },
-  { value: 'aggressive', label: 'Aggressive', desc: 'I can handle market ups and downs for higher returns' },
-]
+const RISK_LABELS: Record<number, { label: string; desc: string }> = {
+  0: { label: 'Conservative', desc: 'Safety over returns' },
+  1: { label: 'Moderate', desc: 'Balanced growth' },
+  2: { label: 'Aggressive', desc: 'Maximum long-term growth' },
+}
+
+const RISK_VALUES: RiskAppetite[] = ['conservative', 'moderate', 'aggressive']
+
+const inputStyle = {
+  width: '100%',
+  padding: '10px 12px',
+  borderRadius: '10px',
+  border: '1px solid var(--border)',
+  background: 'var(--bg-surface)',
+  color: 'var(--text-primary)',
+  fontSize: '14px',
+  outline: 'none',
+}
+
+const labelStyle = {
+  display: 'block',
+  fontSize: '13px',
+  fontWeight: 500,
+  color: 'var(--text-secondary)',
+  marginBottom: '6px',
+}
 
 export default function Step1Page() {
   const router = useRouter()
   const [age, setAge] = useState<number | ''>('')
   const [city, setCity] = useState('')
   const [companyType, setCompanyType] = useState<CompanyType | ''>('')
-  const [riskAppetite, setRiskAppetite] = useState<RiskAppetite | ''>('')
+  const [riskIndex, setRiskIndex] = useState(1)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
@@ -67,10 +87,6 @@ export default function Step1Page() {
       setError('Please select your company type.')
       return
     }
-    if (!riskAppetite) {
-      setError('Please select your risk appetite.')
-      return
-    }
 
     setLoading(true)
     const supabase = createClient()
@@ -86,7 +102,7 @@ export default function Step1Page() {
       age,
       city,
       company_type: companyType,
-      risk_appetite: riskAppetite,
+      risk_appetite: RISK_VALUES[riskIndex],
     })
 
     if (dbError) {
@@ -95,24 +111,30 @@ export default function Step1Page() {
       return
     }
 
-    router.push('/onboarding/step-2')
+    router.push('/dashboard')
   }
 
   return (
-    <div className="min-h-screen bg-[#f8f7ff] py-10 px-4">
-      <div className="max-w-lg mx-auto">
-        <StepIndicator currentStep={1} />
+    <div>
+      <div className="mb-6">
+        <h2 className="text-2xl font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>
+          Your Profile
+        </h2>
+        <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+          Tell us a bit about yourself to personalise your twin.
+        </p>
+      </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-1">Your Profile</h2>
-          <p className="text-sm text-gray-500 mb-6">Tell us a bit about yourself to personalise your twin.</p>
+      <div
+        className="rounded-2xl border p-6"
+        style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)', boxShadow: 'var(--shadow-md)' }}
+      >
+        <form onSubmit={handleNext} className="space-y-6">
 
-          <form onSubmit={handleNext} className="space-y-6">
-            {/* Age */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="age">
-                Age
-              </label>
+          {/* Age + City side by side */}
+          <div className="flex gap-3">
+            <div style={{ width: '90px', flexShrink: 0 }}>
+              <label style={labelStyle} htmlFor="age">Age</label>
               <input
                 id="age"
                 type="number"
@@ -121,24 +143,20 @@ export default function Step1Page() {
                 required
                 value={age}
                 onChange={e => setAge(e.target.value === '' ? '' : Number(e.target.value))}
-                className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#1e1847]/30 focus:border-[#1e1847] transition"
-                placeholder="e.g. 27"
+                placeholder="27"
+                style={inputStyle}
               />
             </div>
-
-            {/* City */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="city">
-                City
-              </label>
+            <div style={{ flex: 1 }}>
+              <label style={labelStyle} htmlFor="city">City</label>
               <select
                 id="city"
                 required
                 value={city}
                 onChange={e => setCity(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-[#1e1847]/30 focus:border-[#1e1847] transition"
+                style={inputStyle}
               >
-                <option value="">Select your city</option>
+                <option value="">Select city</option>
                 {CITIES.map(c => (
                   <option key={c.city} value={c.city}>
                     {c.city}, {c.state}
@@ -146,68 +164,72 @@ export default function Step1Page() {
                 ))}
               </select>
             </div>
+          </div>
 
-            {/* Company type */}
-            <div>
-              <p className="text-sm font-medium text-gray-700 mb-2">Company type</p>
-              <div className="grid grid-cols-2 gap-3">
-                {COMPANY_TYPES.map(opt => (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    onClick={() => setCompanyType(opt.value)}
-                    className={`text-left px-4 py-3 rounded-xl border-2 transition ${
-                      companyType === opt.value
-                        ? 'border-[#1e1847] bg-[#1e1847]/5'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                  >
-                    <p className={`text-sm font-semibold ${companyType === opt.value ? 'text-[#1e1847]' : 'text-gray-800'}`}>
-                      {opt.label}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-0.5">{opt.desc}</p>
-                  </button>
-                ))}
-              </div>
+          {/* Company type — 2×2 pill grid */}
+          <div>
+            <p style={labelStyle}>Company type</p>
+            <div className="grid grid-cols-2 gap-2">
+              {COMPANY_TYPES.map(opt => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setCompanyType(opt.value)}
+                  className="rounded-xl border font-medium text-sm transition-colors"
+                  style={{
+                    height: '44px',
+                    borderColor: companyType === opt.value ? 'var(--brand)' : 'var(--border)',
+                    background: companyType === opt.value ? 'var(--brand)' : 'var(--bg-surface)',
+                    color: companyType === opt.value ? '#fff' : 'var(--text-primary)',
+                  }}
+                >
+                  {opt.label}
+                </button>
+              ))}
             </div>
+          </div>
 
-            {/* Risk appetite */}
-            <div>
-              <p className="text-sm font-medium text-gray-700 mb-2">Risk appetite</p>
-              <div className="space-y-2">
-                {RISK_OPTIONS.map(opt => (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    onClick={() => setRiskAppetite(opt.value)}
-                    className={`w-full text-left px-4 py-3 rounded-xl border-2 transition ${
-                      riskAppetite === opt.value
-                        ? 'border-[#1e1847] bg-[#1e1847]/5'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                  >
-                    <p className={`text-sm font-semibold ${riskAppetite === opt.value ? 'text-[#1e1847]' : 'text-gray-800'}`}>
-                      {opt.label}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-0.5">{opt.desc}</p>
-                  </button>
-                ))}
-              </div>
+          {/* Risk appetite — slider */}
+          <div>
+            <p style={labelStyle}>Risk appetite</p>
+            <input
+              type="range"
+              min={0}
+              max={2}
+              step={1}
+              value={riskIndex}
+              onChange={e => setRiskIndex(Number(e.target.value))}
+              className="w-full"
+              style={{ accentColor: 'var(--brand)' }}
+            />
+            <div className="mt-2">
+              <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+                {RISK_LABELS[riskIndex].label}
+              </p>
+              <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                {RISK_LABELS[riskIndex].desc}
+              </p>
             </div>
+          </div>
 
-            {error && (
-              <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>
-            )}
+          {error && (
+            <p className="text-sm rounded-xl px-3 py-2"
+               style={{ color: 'var(--risk-high)', background: '#FDF2F0' }}>
+              {error}
+            </p>
+          )}
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-[#1e1847] text-white font-medium py-2.5 rounded-lg hover:bg-[#2d2568] disabled:opacity-60 disabled:cursor-not-allowed transition"
-            >
-              {loading ? 'Saving…' : 'Next →'}
-            </button>
-          </form>
-        </div>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full text-white font-semibold transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+            style={{ background: 'var(--brand)', height: '52px', borderRadius: '12px' }}
+            onMouseOver={e => !loading && ((e.target as HTMLElement).style.background = 'var(--brand-hover)')}
+            onMouseOut={e => !loading && ((e.target as HTMLElement).style.background = 'var(--brand)')}
+          >
+            {loading ? 'Saving…' : 'Build my Twin →'}
+          </button>
+        </form>
       </div>
     </div>
   )

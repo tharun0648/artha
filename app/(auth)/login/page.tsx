@@ -14,25 +14,29 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f5f4f1] flex items-center justify-center px-4">
+    <div style={{ minHeight: '100vh', background: 'var(--bg-page)' }}
+         className="flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
 
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-semibold text-[#1e1847]">A₹tha</h1>
-          <p className="text-sm text-[#7f77dd] mt-1">Know what&apos;s blocking your future.</p>
+        <div className="mb-10 text-center">
+          <h1 className="text-4xl font-semibold" style={{ color: 'var(--text-primary)' }}>
+            A₹tha
+          </h1>
+          <p className="mt-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
+            Financial decisions. Better futures.
+          </p>
         </div>
 
-        {/* Card */}
-        <div className="bg-white rounded-2xl shadow-sm border border-[#e8e6e1] p-8">
-          <h2 className="text-lg font-semibold text-[#1a1a1a] mb-1">Welcome</h2>
-          <p className="text-sm text-gray-500 mb-6">
+        <div className="rounded-2xl border p-8"
+             style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)', boxShadow: 'var(--shadow-md)' }}>
+          <p className="text-sm mb-6" style={{ color: 'var(--text-secondary)' }}>
             Sign in to access your Financial Digital Twin.
           </p>
 
           <button
             onClick={handleGoogleSignIn}
-            className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-200 rounded-xl bg-white hover:bg-gray-50 transition-colors text-sm font-medium text-gray-700 shadow-sm"
+            className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl border transition-colors hover:opacity-90"
+            style={{ borderColor: 'var(--border)', background: 'var(--bg-surface)', color: 'var(--text-primary)' }}
           >
             <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
               <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
@@ -43,9 +47,8 @@ export default function LoginPage() {
             Continue with Google
           </button>
 
-          <p className="text-xs text-gray-400 text-center mt-6">
-            Your data is private and never sold.
-            <br />A₹tha uses Google only for identity — no financial data is shared.
+          <p className="text-xs text-center mt-6" style={{ color: 'var(--text-muted)' }}>
+            Your financial data is private and never shared.
           </p>
         </div>
 

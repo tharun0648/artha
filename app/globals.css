@@ -1,26 +1,57 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+  --bg-page: #F7F6F3;
+  --bg-surface: #FFFFFF;
+  --bg-surface-secondary: #F2F1ED;
+  --bg-elevated: #FCFBF8;
+  --border: #E6E2DB;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --text-primary: #17212B;
+  --text-secondary: #5B6572;
+  --text-muted: #8D98A5;
+
+  --brand: #4F6F52;
+  --brand-hover: #3F5B42;
+  --brand-soft: #EAF2EC;
+
+  --slate: #5E6C84;
+  --slate-soft: #EEF1F5;
+
+  --risk-high: #C96A5B;
+  --risk-medium: #D7A04A;
+  --risk-low: #7A8F6A;
+
+  --success: #4F8A5B;
+  --info: #6A7C95;
+  --warning: #D7A04A;
+
+  --radius: 16px;
+  --radius-sm: 10px;
+  --shadow: 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.06);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --bg-page: #121618;
+    --bg-surface: #1A2124;
+    --bg-elevated: #232B30;
+    --border: #313A40;
+    --text-primary: #F4F2EE;
+    --text-secondary: #A7B1BA;
+    --brand: #7DA482;
+    --brand-soft: #1E2E20;
   }
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg-page);
+  color: var(--text-primary);
+  font-family: 'Inter', -apple-system, sans-serif;
+}
+
+/* Slider accent color */
+input[type="range"] {
+  accent-color: var(--brand);
 }

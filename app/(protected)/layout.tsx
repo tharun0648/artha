@@ -16,5 +16,33 @@ export default async function ProtectedLayout({
     redirect('/login')
   }
 
-  return <>{children}</>
+  const userInitial = (
+    user.user_metadata?.full_name?.[0] ||
+    user.email?.[0] ||
+    'U'
+  ).toUpperCase()
+
+  return (
+    <>
+      <nav
+        style={{ background: 'var(--bg-surface)', borderBottom: '1px solid var(--border)' }}
+        className="sticky top-0 z-10 px-4 h-14 flex items-center justify-between"
+      >
+        <span className="font-semibold text-lg" style={{ color: 'var(--text-primary)' }}>
+          A₹tha
+        </span>
+        <div className="flex items-center gap-3">
+          <div
+            className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium text-white"
+            style={{ background: 'var(--brand)' }}
+          >
+            {userInitial}
+          </div>
+        </div>
+      </nav>
+      <main className="px-4 py-6 max-w-lg mx-auto">
+        {children}
+      </main>
+    </>
+  )
 }
