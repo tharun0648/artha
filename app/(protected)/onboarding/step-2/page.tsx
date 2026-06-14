@@ -134,10 +134,6 @@ export default function Step2Page() {
         current_savings: savings,
         equity_investments: equity,
         epf_balance: epf,
-        // goal fields — defaults until step 3
-        primary_goal: 'wealth',
-        goal_target_amount: 0,
-        goal_target_year: new Date().getFullYear() + 10,
       },
       { onConflict: 'user_id' }
     )
@@ -171,7 +167,7 @@ export default function Step2Page() {
           {/* Income */}
           <section>
             <p style={sectionHeadStyle}>Income</p>
-            <div className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <RupeeInput
                 id="income"
                 label="Monthly take-home salary"
@@ -191,7 +187,7 @@ export default function Step2Page() {
           {/* Outgoings */}
           <section>
             <p style={sectionHeadStyle}>Monthly Outgoings</p>
-            <div className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <RupeeInput
                 id="rent"
                 label="Total rent & housing"
@@ -204,13 +200,28 @@ export default function Step2Page() {
                 value={food}
                 onChange={setFood}
               />
-              <RupeeInput
-                id="other"
-                label="Everything else"
-                sublabel="transport, entertainment, subscriptions, other"
-                value={other}
-                onChange={setOther}
-              />
+              <div>
+                <label style={labelStyle} htmlFor="other">
+                  Everything else
+                  <span style={{ color: 'var(--text-muted)', fontWeight: 400, display: 'block', fontSize: '12px' }}>
+                    transport, entertainment, other
+                  </span>
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm select-none"
+                        style={{ color: 'var(--text-muted)' }}>₹</span>
+                  <input
+                    id="other"
+                    type="number"
+                    min={0}
+                    value={other === 0 ? '' : other}
+                    onChange={e => setOther(e.target.value === '' ? 0 : Number(e.target.value))}
+                    placeholder="0"
+                    className="w-full rounded-xl border"
+                    style={{ paddingLeft: '28px', paddingRight: '12px', paddingTop: '10px', paddingBottom: '10px', borderColor: 'var(--border)', background: 'var(--bg-surface)', color: 'var(--text-primary)', fontSize: '14px', outline: 'none' }}
+                  />
+                </div>
+              </div>
               <RupeeInput
                 id="emi"
                 label="Total EMIs"
@@ -239,7 +250,7 @@ export default function Step2Page() {
           {/* Assets */}
           <section>
             <p style={sectionHeadStyle}>What You Have</p>
-            <div className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <RupeeInput
                 id="savings"
                 label="Savings & FD"
@@ -253,13 +264,15 @@ export default function Step2Page() {
                 value={equity}
                 onChange={setEquity}
               />
-              <RupeeInput
-                id="epf"
-                label="EPF balance"
-                optional
-                value={epf}
-                onChange={setEpf}
-              />
+              <div className="sm:col-span-2">
+                <RupeeInput
+                  id="epf"
+                  label="EPF balance"
+                  optional
+                  value={epf}
+                  onChange={setEpf}
+                />
+              </div>
             </div>
           </section>
 

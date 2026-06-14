@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { INDIAN_SUBSCRIPTIONS } from '@/lib/subscriptions-data'
 import { GoalType } from '@/types/twin'
+import SubscriptionPicker, { SubscriptionRow } from '@/components/onboarding/SubscriptionPicker'
 
 const GOAL_OPTIONS: { value: GoalType; emoji: string; label: string }[] = [
   { value: 'home', emoji: '🏠', label: 'Home' },
@@ -23,24 +23,20 @@ const AMOUNT_CHIPS = [
   { label: '₹5Cr', value: 50000000 },
 ]
 
-const SUB_CATEGORIES = [
-  { key: 'entertainment', label: 'Entertainment', options: INDIAN_SUBSCRIPTIONS.filter(s => s.category === 'entertainment') },
-  { key: 'music', label: 'Music', options: INDIAN_SUBSCRIPTIONS.filter(s => s.category === 'music') },
-  { key: 'food', label: 'Food delivery', options: INDIAN_SUBSCRIPTIONS.filter(s => s.category === 'food') },
-  { key: 'fitness', label: 'Fitness', options: INDIAN_SUBSCRIPTIONS.filter(s => s.category === 'fitness') },
-  { key: 'productivity', label: 'Productivity', options: INDIAN_SUBSCRIPTIONS.filter(s => s.category === 'productivity') },
-  { key: 'other', label: 'Other', options: INDIAN_SUBSCRIPTIONS.filter(s => ['lifestyle', 'news', 'telecom', 'airtel'].includes(s.category)) },
-]
-
 const CURRENT_YEAR = new Date().getFullYear()
 
-function calculateTargetYear(goalAmount: number, monthlySurplus: number, currentSavings: number): number {
-  if (monthlySurplus <= 0) return CURRENT_YEAR + 10
+function calculateRealisticYear(goalAmount: number, twinSurplus: number, twinSavings: number): number {
+  if (twinSurplus <= 0 && twinSavings <= 0) return CURRENT_YEAR + 10
   for (let years = 1; years <= 30; years++) {
-    const projected = (monthlySurplus * 12 * years * 1.08) + (currentSavings * Math.pow(1.12, years))
-    if (projected >= goalAmount) return CURRENT_YEAR + years
+    const r = 0.12 / 12
+    const n = years * 12
+    const sipValue = twinSurplus > 0
+      ? twinSurplus * ((Math.pow(1 + r, n) - 1) / r) * (1 + r)
+      : 0
+    const lumpSum = twinSavings * Math.pow(1.12, years)
+    if (sipValue + lumpSum >= goalAmount) return CURRENT_YEAR + years
   }
-  return CURRENT_YEAR + 15
+  return CURRENT_YEAR + 30
 }
 
 const labelStyle = {
@@ -65,20 +61,16 @@ export default function Step3Page() {
   const [selectedGoal, setSelectedGoal] = useState<GoalType | null>(null)
   const [targetAmount, setTargetAmount] = useState(0)
   const [targetYear, setTargetYear] = useState(CURRENT_YEAR + 10)
-  const [autoYear, setAutoYear] = useState<number | null>(null)
+  const [realisticYear, setRealisticYear] = useState<number | null>(null)
 
-  const [monthlySurplus, setMonthlySurplus] = useState(20000)
-  const [currentSavings, setCurrentSavings] = useState(0)
+  const [twinSurplus, setTwinSurplus] = useState(0)
+  const [twinSavings, setTwinSavings] = useState(0)
 
-  // category → selected sub id ('none' or sub.id)
-  const [catSelections, setCatSelections] = useState<Record<string, string>>(
-    Object.fromEntries(SUB_CATEGORIES.map(r => [r.key, 'none']))
-  )
+  const [selectedSubs, setSelectedSubs] = useState<SubscriptionRow[]>([])
 
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
-  // Fetch twin data to power auto-calculate
   useEffect(() => {
     async function fetchTwin() {
       const supabase = createClient()
@@ -86,35 +78,29 @@ export default function Step3Page() {
       if (!user) return
       const { data } = await supabase
         .from('financial_twin')
-        .select('monthly_income,monthly_rent,monthly_food,monthly_transport,monthly_entertainment,monthly_other,total_monthly_emi,current_savings,equity_investments,epf_balance')
+        .select('monthly_income,total_monthly_expenses,current_savings,equity_investments')
         .eq('user_id', user.id)
         .single()
       if (data) {
-        const surplus = data.monthly_income - data.monthly_rent - data.monthly_food - data.monthly_transport - data.monthly_entertainment - data.monthly_other - data.total_monthly_emi
-        setMonthlySurplus(surplus > 0 ? surplus : 5000)
-        setCurrentSavings((data.current_savings || 0) + (data.equity_investments || 0) + (data.epf_balance || 0))
+        const surplus = data.monthly_income - (data.total_monthly_expenses ?? 0)
+        setTwinSurplus(Math.max(surplus, 0))
+        setTwinSavings((data.current_savings || 0) + (data.equity_investments || 0))
       }
     }
     fetchTwin()
   }, [])
 
-  // Auto-calculate year when amount changes
   useEffect(() => {
     if (targetAmount > 0) {
-      const year = calculateTargetYear(targetAmount, monthlySurplus, currentSavings)
-      setAutoYear(year)
+      const year = calculateRealisticYear(targetAmount, twinSurplus, twinSavings)
+      setRealisticYear(year)
       setTargetYear(year)
     }
-  }, [targetAmount, monthlySurplus, currentSavings])
+  }, [targetAmount, twinSurplus, twinSavings])
 
-  const selectedSubs = SUB_CATEGORIES.flatMap(row => {
-    const selectedId = catSelections[row.key]
-    if (selectedId === 'none') return []
-    return row.options.filter(o => o.id === selectedId)
-  })
-
-  const totalMonthly = selectedSubs.reduce((s, sub) => s + sub.monthly_amount, 0)
-  const totalAnnual = totalMonthly * 12
+  const handleSubsChange = useCallback((subs: SubscriptionRow[]) => {
+    setSelectedSubs(subs)
+  }, [])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -127,27 +113,19 @@ export default function Step3Page() {
     setLoading(true)
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
-
     if (!user) { router.push('/login'); return }
 
     const { error: twinError } = await supabase.from('financial_twin').upsert(
       { user_id: user.id, primary_goal: selectedGoal, goal_target_amount: targetAmount, goal_target_year: targetYear },
       { onConflict: 'user_id' }
     )
-
     if (twinError) { setError(twinError.message); setLoading(false); return }
 
     await supabase.from('subscriptions').delete().eq('user_id', user.id)
 
     if (selectedSubs.length > 0) {
       const { error: subError } = await supabase.from('subscriptions').insert(
-        selectedSubs.map(sub => ({
-          user_id: user.id,
-          name: sub.name,
-          monthly_amount: sub.monthly_amount,
-          category: sub.category,
-          is_active: true,
-        }))
+        selectedSubs.map(sub => ({ user_id: user.id, name: sub.name, monthly_amount: sub.monthly_amount, category: sub.category, is_active: true }))
       )
       if (subError) { setError(subError.message); setLoading(false); return }
     }
@@ -174,7 +152,7 @@ export default function Step3Page() {
              style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)', boxShadow: 'var(--shadow-md)' }}>
 
           {/* 2×2 grid + 1 centered */}
-          <div className="grid grid-cols-2 gap-3 mb-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-3">
             {GOAL_OPTIONS.slice(0, 4).map(opt => (
               <button
                 key={opt.value}
@@ -187,31 +165,24 @@ export default function Step3Page() {
                 }}
               >
                 <span className="text-2xl">{opt.emoji}</span>
-                <span
-                  className="text-xs font-semibold"
-                  style={{ color: selectedGoal === opt.value ? 'var(--brand)' : 'var(--text-primary)' }}
-                >
+                <span className="text-xs font-semibold"
+                      style={{ color: selectedGoal === opt.value ? 'var(--brand)' : 'var(--text-primary)' }}>
                   {opt.label}
                 </span>
               </button>
             ))}
-          </div>
-          <div className="flex justify-center">
             <button
               type="button"
               onClick={() => setSelectedGoal(GOAL_OPTIONS[4].value)}
               className="flex flex-col items-center gap-2 p-4 rounded-xl border transition-colors"
               style={{
-                width: 'calc(50% - 6px)',
                 borderColor: selectedGoal === GOAL_OPTIONS[4].value ? 'var(--brand)' : 'var(--border)',
                 background: selectedGoal === GOAL_OPTIONS[4].value ? 'var(--brand-soft)' : 'var(--bg-surface)',
               }}
             >
               <span className="text-2xl">{GOAL_OPTIONS[4].emoji}</span>
-              <span
-                className="text-xs font-semibold"
-                style={{ color: selectedGoal === GOAL_OPTIONS[4].value ? 'var(--brand)' : 'var(--text-primary)' }}
-              >
+              <span className="text-xs font-semibold"
+                    style={{ color: selectedGoal === GOAL_OPTIONS[4].value ? 'var(--brand)' : 'var(--text-primary)' }}>
                 {GOAL_OPTIONS[4].label}
               </span>
             </button>
@@ -258,9 +229,9 @@ export default function Step3Page() {
 
           {/* Target year */}
           <div className="mt-4">
-            {autoYear && targetAmount > 0 && (
+            {realisticYear && targetAmount > 0 && (
               <p className="text-xs mb-2" style={{ color: 'var(--text-muted)' }}>
-                Realistic by: <strong style={{ color: 'var(--brand)' }}>{autoYear}</strong> · Adjust if needed
+                Realistic by: <strong style={{ color: 'var(--brand)' }}>{realisticYear}</strong> · Adjust if needed
               </p>
             )}
             <p style={{ ...labelStyle, display: 'block' }}>Target year</p>
@@ -284,59 +255,9 @@ export default function Step3Page() {
              style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)', boxShadow: 'var(--shadow-md)' }}>
           <p style={sectionHeadStyle}>Subscriptions</p>
           <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>
-            Select what you&apos;re subscribed to — one per category.
+            Select what you&apos;re subscribed to — pick the plan you&apos;re on.
           </p>
-
-          <div className="space-y-3">
-            {SUB_CATEGORIES.map(row => {
-              const selectedId = catSelections[row.key]
-              const selectedSub = row.options.find(o => o.id === selectedId)
-              return (
-                <div key={row.key} className="flex items-center gap-3">
-                  <span
-                    className="text-sm font-medium"
-                    style={{ width: '110px', flexShrink: 0, color: 'var(--text-secondary)' }}
-                  >
-                    {row.label}
-                  </span>
-                  <select
-                    value={selectedId}
-                    onChange={e => setCatSelections(prev => ({ ...prev, [row.key]: e.target.value }))}
-                    className="flex-1 rounded-xl border text-sm"
-                    style={{
-                      padding: '8px 10px', borderColor: 'var(--border)',
-                      background: 'var(--bg-surface)', color: 'var(--text-primary)', outline: 'none',
-                    }}
-                  >
-                    <option value="none">None</option>
-                    {row.options.map(opt => (
-                      <option key={opt.id} value={opt.id}>{opt.name}</option>
-                    ))}
-                  </select>
-                  <span
-                    className="text-sm font-medium text-right"
-                    style={{ width: '52px', flexShrink: 0, color: selectedSub ? 'var(--text-primary)' : 'var(--text-muted)' }}
-                  >
-                    {selectedSub ? `₹${selectedSub.monthly_amount}` : '₹0'}
-                  </span>
-                </div>
-              )
-            })}
-          </div>
-
-          {totalMonthly > 0 && (
-            <div
-              className="mt-4 rounded-xl px-4 py-3 text-sm"
-              style={{ background: 'var(--bg-surface-secondary)' }}
-            >
-              <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>
-                Total: ₹{totalMonthly.toLocaleString('en-IN')}/month
-              </span>
-              <span style={{ color: 'var(--text-muted)', marginLeft: '8px' }}>
-                · ₹{totalAnnual.toLocaleString('en-IN')}/year
-              </span>
-            </div>
-          )}
+          <SubscriptionPicker onChange={handleSubsChange} />
         </div>
 
         {error && (

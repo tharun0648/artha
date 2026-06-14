@@ -85,9 +85,10 @@ export async function projectedSavingsAtGoal(
   twin: FinancialTwin,
   yearsToGoal: number,
   city: string,
-  risk: 'conservative' | 'moderate' | 'aggressive' = 'moderate'
+  risk: 'conservative' | 'moderate' | 'aggressive' = 'moderate',
+  age: number = 30
 ): Promise<number> {
-  const instrument = getRecommendedInstrument(twin.monthly_income > 0 ? 30 : 30, risk)
+  const instrument = getRecommendedInstrument(age, risk)
   const returnRate = await getMarketReturn(instrument, Math.min(yearsToGoal, 10))
   const monthlySurplus = twin.monthly_income - twin.total_monthly_expenses
   const currentCorpus = twin.current_savings + twin.equity_investments + twin.epf_balance
