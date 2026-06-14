@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
+import Link from 'next/link'
 
 export default async function ProtectedLayout({
   children,
@@ -32,11 +33,20 @@ export default async function ProtectedLayout({
           <span className="font-semibold text-lg" style={{ color: 'var(--text-primary)' }}>
             A₹tha
           </span>
-          <div
-            className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium text-white"
-            style={{ background: 'var(--brand)' }}
-          >
-            {userInitial}
+          <div className="flex items-center gap-3">
+            <Link
+              href="/settings"
+              className="text-sm"
+              style={{ color: 'var(--text-muted)' }}
+            >
+              Settings
+            </Link>
+            <div
+              className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium text-white"
+              style={{ background: 'var(--brand)' }}
+            >
+              {userInitial}
+            </div>
           </div>
         </div>
       </nav>

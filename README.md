@@ -27,12 +27,13 @@ twin in real time.
 
 | Layer       | Technology                          |
 |-------------|-------------------------------------|
-| Framework   | Next.js 14 (App Router)             |
-| Styling     | Tailwind CSS                        |
+| Framework   | Next.js 16 (App Router) + React 19  |
+| Language    | TypeScript                          |
+| Styling     | Tailwind v4 + CSS Variables         |
 | Icons       | Lucide React                        |
 | Backend     | Supabase (PostgreSQL + Auth)        |
 | AI          | Groq — llama-3.3-70b-versatile      |
-| Deployment  | Bolt.new (via GitHub import)        |
+| Design      | Design System v2 (Inter, sage/ivory) |
 
 ## Architecture Principle
 
@@ -55,6 +56,12 @@ on financial figures.
 All tables have Row Level Security enabled. User tables are owner-only.
 Reference tables are authenticated read-only.
 
+## API Routes
+
+- `/api/analyze-twin` — Core analysis endpoint (financial math + Groq reasoning)
+- `/api/simulate` — Decision Lab endpoint for what-if scenarios (not implemented)
+- `/api/spend-check` — Purchase analysis endpoint (not implemented)
+
 ## Project Structure
 artha/
 ├── app/
@@ -70,12 +77,12 @@ artha/
 ## Environment Variables
 
 ```env
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
-SUPABASE_SECRET_KEY=
-
-SUPABASE_PROJECT_REF=
-GROQ_API_KEY=
+NEXT_PUBLIC_SUPABASE_URL=          # Supabase project URL
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=  # Browser-safe key (sb_publishable_...)
+SUPABASE_SECRET_KEY=               # Server-only key (sb_secret_...)
+SUPABASE_ACCESS_TOKEN=             # Management API token (sbp_...)
+SUPABASE_PROJECT_REF=              # Project reference from URL
+GROQ_API_KEY=                      # Groq API key (gsk_...)
 ```
 
 ## Data Sources
@@ -98,3 +105,12 @@ GROQ_API_KEY=
 ## Builder
 
 Tharun Kumar — [github.com/tharun0648/artha](https://github.com/tharun0648/artha)
+
+## Developer Documentation
+
+- **AGENTS.md** — Architectural rules and contracts (stable)
+- **SNAPSHOT.md** — Live technical snapshot (updated per session)
+
+## License
+
+Built for the Ayuda Individual Hackathon — Jun 13–14, 2025
