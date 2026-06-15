@@ -7,6 +7,7 @@ const inter = Inter({ subsets: ['latin'] });
 export const metadata: Metadata = {
   title: "A₹tha — Financial Digital Twin",
   description: "Quantify exactly what's blocking your financial goals.",
+  icons: { icon: '/favicon.svg' },
 };
 
 export default function RootLayout({
@@ -15,8 +16,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.className} h-full antialiased`}>
-      <body className="min-h-full flex flex-col">{children}</body>
+    <html lang="en" className={`h-full antialiased`}>
+      <body className="${inter.className} min-h-full flex flex-col">{children}</body>
     </html>
   );
 }

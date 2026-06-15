@@ -2,41 +2,74 @@ import type { VerdictOutput } from '@/types/analysis'
 
 interface VerdictCardProps {
   verdict: VerdictOutput
+  goalLabel: string
+  goalAmount: string
+  goalYear: number
+  editHref: string
 }
 
 function probabilityColor(p: number): string {
-  if (p >= 70) return 'var(--success)'
-  if (p >= 45) return 'var(--warning)'
-  return 'var(--risk-high)'
+  if (p >= 70) return 'var(--brand)'
+  if (p >= 40) return 'var(--accent)'
+  return '#D94F4F'
 }
 
-export default function VerdictCard({ verdict }: VerdictCardProps) {
+export default function VerdictCard({ verdict, goalLabel, goalAmount, goalYear, editHref }: VerdictCardProps) {
   const color = probabilityColor(verdict.goal_probability)
+  const sorted = [...verdict.causal_attribution].sort((a, b) => b.contribution_pct - a.contribution_pct)
 
   return (
-    <div
-      className="rounded-2xl border p-5"
-      style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)', boxShadow: 'var(--shadow-md)' }}
-    >
-      <div className="flex items-start justify-between gap-4 mb-4">
+    <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '8px', padding: '20px' }}>
+      {/* Header row */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '16px' }}>
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wide mb-1" style={{ color: 'var(--text-muted)' }}>
-            Goal probability
+          <p style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--muted)' }}>
+            Financial Twin
           </p>
-          <p className="text-4xl font-semibold tabular-nums" style={{ color }}>
-            {verdict.goal_probability}%
+          <p style={{ fontSize: '13px', color: 'var(--ink-2)', marginTop: '2px' }}>
+            {goalLabel} · {goalAmount} by {goalYear}
           </p>
         </div>
-        <div
-          className="rounded-full px-3 py-1 text-xs font-medium shrink-0"
-          style={{ background: 'var(--brand-soft)', color: 'var(--brand)' }}
+        <a
+          href={editHref}
+          style={{ fontSize: '13px', fontWeight: 500, color: 'var(--ink-2)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'none', flexShrink: 0, marginTop: '2px' }}
         >
-          {verdict.confidence}% confidence
-        </div>
+          Edit goal
+        </a>
       </div>
-      <p className="text-base leading-relaxed" style={{ color: 'var(--text-primary)' }}>
+
+      {/* Hero probability */}
+      <p style={{ fontSize: '40px', fontWeight: 700, color, lineHeight: 1, marginBottom: '8px' }}>
+        {verdict.goal_probability}%
+      </p>
+      <p style={{ fontSize: '14px', fontWeight: 400, lineHeight: 1.6, color: 'var(--ink-2)', marginBottom: '16px' }}>
         {verdict.verdict}
       </p>
+
+      {/* Divider */}
+      <div style={{ borderTop: '1px solid var(--border)', marginBottom: '16px' }} />
+
+      {/* Causal attribution */}
+      {sorted.length > 0 && (
+        <>
+          <p style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--muted)', marginBottom: '12px' }}>
+            Blocking your goal
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {sorted.map(f => (
+              <div key={f.rank}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                  <span style={{ fontSize: '14px', color: 'var(--ink)' }}>{f.factor}</span>
+                  <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--accent)' }}>{f.contribution_pct}%</span>
+                </div>
+                <div style={{ height: '3px', background: 'var(--border)', borderRadius: '2px', overflow: 'hidden' }}>
+                  <div style={{ height: '3px', width: `${f.contribution_pct}%`, background: 'var(--accent)', borderRadius: '2px' }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   )
 }

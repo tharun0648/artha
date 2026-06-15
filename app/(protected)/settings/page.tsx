@@ -27,32 +27,25 @@ function Section({
   children: React.ReactNode
 }) {
   return (
-    <div
-      className="rounded-2xl border p-5"
-      style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}
-    >
-      <div className="flex items-center justify-between mb-4">
-        <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
+    <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '8px', padding: '20px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+        <p style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--muted)' }}>
           {title}
         </p>
-        <Link
-          href={editHref}
-          className="text-xs font-medium"
-          style={{ color: 'var(--brand)' }}
-        >
+        <Link href={editHref} style={{ fontSize: '13px', fontWeight: 500, color: 'var(--brand)', textDecoration: 'none' }}>
           Edit →
         </Link>
       </div>
-      <div className="space-y-3">{children}</div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>{children}</div>
     </div>
   )
 }
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-baseline justify-between gap-4">
-      <p className="text-sm" style={{ color: 'var(--text-muted)' }}>{label}</p>
-      <p className="text-sm font-medium text-right" style={{ color: 'var(--text-primary)' }}>{value}</p>
+    <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '16px' }}>
+      <p style={{ fontSize: '14px', color: 'var(--muted)' }}>{label}</p>
+      <p style={{ fontSize: '15px', fontWeight: 600, color: 'var(--ink)', textAlign: 'right' }}>{value}</p>
     </div>
   )
 }
@@ -76,15 +69,14 @@ export default async function SettingsPage() {
   const monthlySubTotal = subscriptions.reduce((s, sub) => s + sub.monthly_amount, 0)
 
   return (
-    <div className="space-y-6">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', maxWidth: '600px' }}>
       <div>
-        <h1 className="text-2xl font-semibold" style={{ color: 'var(--text-primary)' }}>Settings</h1>
-        <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
+        <h1 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--ink)' }}>Settings</h1>
+        <p style={{ fontSize: '14px', color: 'var(--ink-2)', marginTop: '4px', lineHeight: 1.6 }}>
           Your financial twin data. Edit via onboarding steps.
         </p>
       </div>
 
-      {/* Section 1: Profile */}
       <Section title="Profile" editHref="/onboarding/step-1">
         {profile ? (
           <>
@@ -94,42 +86,34 @@ export default async function SettingsPage() {
             <Row label="Risk appetite" value={profile.risk_appetite ?? '—'} />
           </>
         ) : (
-          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+          <p style={{ fontSize: '14px', color: 'var(--muted)' }}>
             No profile yet.{' '}
             <Link href="/onboarding/step-1" style={{ color: 'var(--brand)' }}>Complete step 1 →</Link>
           </p>
         )}
       </Section>
 
-      {/* Section 2: Financial model */}
       <Section title="Financial model" editHref="/onboarding/step-2">
         {twin && twin.monthly_income > 0 ? (
           <>
             <Row label="Monthly income" value={fmt(twin.monthly_income)} />
             <Row label="Monthly expenses" value={fmt(twin.total_monthly_expenses)} />
             <Row label="Monthly surplus" value={fmt(twin.monthly_income - twin.total_monthly_expenses)} />
-            <div style={{ borderTop: '1px solid var(--border)', paddingTop: '12px', marginTop: '4px' }}>
+            <div style={{ borderTop: '1px solid var(--border)', paddingTop: '10px', marginTop: '2px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
               <Row label="Savings / liquid" value={fmt(twin.current_savings)} />
-              <div className="mt-3">
-                <Row label="Equity / MF" value={fmt(twin.equity_investments)} />
-              </div>
-              <div className="mt-3">
-                <Row label="EPF balance" value={fmt(twin.epf_balance)} />
-              </div>
-              <div className="mt-3">
-                <Row label="Total EMI" value={fmt(twin.total_monthly_emi)} />
-              </div>
+              <Row label="Equity / MF" value={fmt(twin.equity_investments)} />
+              <Row label="EPF balance" value={fmt(twin.epf_balance)} />
+              <Row label="Total EMI" value={fmt(twin.total_monthly_emi)} />
             </div>
           </>
         ) : (
-          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+          <p style={{ fontSize: '14px', color: 'var(--muted)' }}>
             No financial data yet.{' '}
             <Link href="/onboarding/step-2" style={{ color: 'var(--brand)' }}>Add money model →</Link>
           </p>
         )}
       </Section>
 
-      {/* Section 3: Goal + subscriptions */}
       <Section title="Goal & subscriptions" editHref="/onboarding/step-3">
         {twin?.primary_goal ? (
           <>
@@ -138,21 +122,19 @@ export default async function SettingsPage() {
             <Row label="Target year" value={String(twin.goal_target_year)} />
           </>
         ) : (
-          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>No goal set yet.</p>
+          <p style={{ fontSize: '14px', color: 'var(--muted)' }}>No goal set yet.</p>
         )}
 
         {subscriptions.length > 0 && (
-          <div style={{ borderTop: '1px solid var(--border)', paddingTop: '12px', marginTop: '4px' }}>
-            <p className="text-xs font-medium mb-2" style={{ color: 'var(--text-muted)' }}>
+          <div style={{ borderTop: '1px solid var(--border)', paddingTop: '10px', marginTop: '2px' }}>
+            <p style={{ fontSize: '12px', fontWeight: 500, color: 'var(--muted)', letterSpacing: '0.02em', marginBottom: '8px' }}>
               Subscriptions · {fmt(monthlySubTotal)}/mo
             </p>
-            <div className="space-y-2">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {subscriptions.map((sub, i) => (
-                <div key={i} className="flex items-center justify-between">
-                  <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{sub.name}</p>
-                  <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
-                    ₹{sub.monthly_amount}/mo
-                  </p>
+                <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <p style={{ fontSize: '14px', color: 'var(--ink-2)' }}>{sub.name}</p>
+                  <p style={{ fontSize: '15px', fontWeight: 600, color: 'var(--ink)' }}>₹{sub.monthly_amount}/mo</p>
                 </div>
               ))}
             </div>
@@ -160,9 +142,7 @@ export default async function SettingsPage() {
         )}
 
         {!twin?.primary_goal && subscriptions.length === 0 && (
-          <Link href="/onboarding/step-3" className="text-sm" style={{ color: 'var(--brand)' }}>
-            Set goal →
-          </Link>
+          <Link href="/onboarding/step-3" style={{ fontSize: '14px', color: 'var(--brand)' }}>Set goal →</Link>
         )}
       </Section>
     </div>

@@ -4,20 +4,35 @@ interface LoadingVerdictProps {
 
 export default function LoadingVerdict({ dots = '.' }: LoadingVerdictProps) {
   return (
-    <div className="flex flex-col items-center justify-center py-20 text-center">
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '64px 0', textAlign: 'center' }}>
       <div
-        className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6"
-        style={{ background: 'var(--brand-soft)' }}
+        style={{
+          width: '56px',
+          height: '56px',
+          borderRadius: '50%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: 'var(--brand-surface)',
+          marginBottom: '20px',
+        }}
       >
         <div
-          className="w-8 h-8 rounded-full border-2 animate-spin"
-          style={{ borderColor: 'var(--brand)', borderTopColor: 'transparent' }}
+          style={{
+            width: '28px',
+            height: '28px',
+            borderRadius: '50%',
+            border: '2px solid var(--brand)',
+            borderTopColor: 'transparent',
+            animation: 'spin 0.8s linear infinite',
+          }}
+          className="animate-spin"
         />
       </div>
-      <h2 className="text-xl font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
+      <p style={{ fontSize: '18px', fontWeight: 600, color: 'var(--ink)', marginBottom: '8px' }}>
         Building your Financial Twin{dots}
-      </h2>
-      <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+      </p>
+      <p style={{ fontSize: '14px', color: 'var(--ink-2)', lineHeight: 1.6 }}>
         Running causal attribution analysis on your financial data.
       </p>
     </div>

@@ -1,30 +1,30 @@
 @import "tailwindcss";
 
 :root {
-  --bg-page: #F8F7F4;
-  --bg-surface: #FFFFFF;
-  --bg-surface-secondary: #F2F1ED;
-  --bg-elevated: #FAFAF8;
-  --border: #E6E2DB;
+  --bg: #F8F8F7;
+  --surface: #FFFFFF;
+  --surface-2: #F3F3F1;
+  --border: #E5E5E3;
+  --border-strong: #CDCDC9;
+  --ink: #1A1A1A;
+  --ink-2: #6B6B6B;
+  --muted: #A0A0A0;
+  --brand: #1D6F42;
+  --brand-hover: #165934;
+  --brand-surface: #F0F7F3;
+  --brand-text: #1D6F42;
+  --accent: #C4622D;
+  --accent-surface: #FBF3EF;
 
-  --text-primary: #1A1A1A;
-  --text-secondary: #5B6572;
-  --text-muted: #8D98A5;
-
-  --brand: #4F6F52;
-  --brand-hover: #3F5B42;
-  --brand-soft: #EAF2EC;
-
-  --slate: #5E6C84;
-  --slate-soft: #EEF1F5;
-
-  --risk-high: #C96A5B;
-  --risk-medium: #D7A04A;
-  --risk-low: #7A8F6A;
-
-  --success: #4F8A5B;
-  --info: #6A7C95;
-  --warning: #D7A04A;
+  /* Legacy aliases for backwards compatibility */
+  --bg-page: var(--bg);
+  --bg-surface: var(--surface);
+  --bg-surface-secondary: var(--surface-2);
+  --bg-elevated: var(--surface-2);
+  --text-primary: var(--ink);
+  --text-secondary: var(--ink-2);
+  --text-muted: var(--muted);
+  --brand-soft: var(--brand-surface);
 
   --radius: 16px;
   --radius-sm: 10px;
@@ -33,12 +33,30 @@
 }
 
 body {
-  background: var(--bg-page);
-  color: var(--text-primary);
-  font-family: 'Inter', -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+/* Semantic color aliases for existing code */
+:root {
+  --success: #1D6F42;
+  --warning: #C4622D;
+  --risk-high: #D94F4F;
+  --risk-medium: #C4622D;
+  --risk-low: #1D6F42;
 }
 
 /* Slider accent color */
 input[type="range"] {
   accent-color: var(--brand);
+}
+
+/* Global input / select focus ring */
+input:not([type="range"]):focus,
+select:focus,
+textarea:focus {
+  border-color: var(--brand) !important;
+  box-shadow: 0 0 0 3px var(--brand-surface);
+  outline: none;
 }

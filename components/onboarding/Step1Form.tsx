@@ -21,22 +21,25 @@ const RISK_LABELS: Record<number, { label: string; desc: string }> = {
 
 const RISK_VALUES: RiskAppetite[] = ['conservative', 'moderate', 'aggressive']
 
-const inputStyle = {
+const inputStyle: React.CSSProperties = {
   width: '100%',
-  padding: '10px 12px',
-  borderRadius: '10px',
+  height: '36px',
+  padding: '8px 12px',
+  borderRadius: '6px',
   border: '1px solid var(--border)',
-  background: 'var(--bg-surface)',
-  color: 'var(--text-primary)',
+  background: 'var(--surface)',
+  color: 'var(--ink)',
   fontSize: '14px',
   outline: 'none',
+  boxSizing: 'border-box',
 }
 
-const labelStyle = {
+const labelStyle: React.CSSProperties = {
   display: 'block',
-  fontSize: '13px',
+  fontSize: '12px',
   fontWeight: 500,
-  color: 'var(--text-secondary)',
+  color: 'var(--muted)',
+  letterSpacing: '0.02em',
   marginBottom: '6px',
 }
 
@@ -127,122 +130,122 @@ export default function Step1Form({ cities }: { cities: string[] }) {
   }
 
   return (
-    <div>
-      <StepIndicator currentStep={1} />
-      <div className="mb-6">
-        <h2 className="text-2xl font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>
-          Your Profile
-        </h2>
-        <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-          Tell us a bit about yourself to personalise your twin.
-        </p>
-      </div>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '40px 24px' }}>
+      <div style={{ width: '100%', maxWidth: '480px' }}>
+        <StepIndicator currentStep={1} />
 
-      <div
-        className="rounded-2xl border p-6"
-        style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)', boxShadow: 'var(--shadow-md)' }}
-      >
-        <form onSubmit={handleNext} className="space-y-6">
+        {/* Form card */}
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '8px', padding: '32px' }}>
+          <h2 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--ink)', marginBottom: '6px' }}>Your Profile</h2>
+          <p style={{ fontSize: '14px', color: 'var(--ink-2)', lineHeight: 1.6, marginBottom: '24px' }}>
+            Tell us a bit about yourself to personalise your twin.
+          </p>
 
-          {/* Age + City side by side */}
-          <div className="flex gap-3">
-            <div style={{ width: '90px', flexShrink: 0 }}>
-              <label style={labelStyle} htmlFor="age">Age</label>
-              <input
-                id="age"
-                type="number"
-                min={18}
-                max={60}
-                value={age}
-                onChange={e => handleAgeChange(e.target.value === '' ? '' : Number(e.target.value))}
-                placeholder="27"
-                style={{
-                  ...inputStyle,
-                  borderColor: errors.age ? '#ef4444' : 'var(--border)',
-                }}
-              />
-              {errors.age && <p className="text-red-500 text-sm mt-1">{errors.age}</p>}
-            </div>
-            <div style={{ flex: 1 }}>
-              <label style={labelStyle} htmlFor="city">City</label>
-              <select
-                id="city"
-                value={city}
-                onChange={e => handleCityChange(e.target.value)}
-                style={{
-                  ...inputStyle,
-                  borderColor: errors.city ? '#ef4444' : 'var(--border)',
-                }}
-              >
-                <option value="">Select city</option>
-                {cities.map(c => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
-              {errors.city && <p className="text-red-500 text-sm mt-1">{errors.city}</p>}
-            </div>
-          </div>
+          <form onSubmit={handleNext} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
-          {/* Company type — 2×2 pill grid */}
-          <div>
-            <p style={labelStyle}>Company type</p>
-            <div className="grid grid-cols-2 gap-2">
-              {COMPANY_TYPES.map(opt => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => handleCompanyTypeChange(opt.value)}
-                  className="rounded-xl border font-medium text-sm transition-colors"
-                  style={{
-                    height: '44px',
-                    borderColor: companyType === opt.value ? 'var(--brand)' : errors.companyType ? '#ef4444' : 'var(--border)',
-                    background: companyType === opt.value ? 'var(--brand)' : 'var(--bg-surface)',
-                    color: companyType === opt.value ? '#fff' : 'var(--text-primary)',
-                  }}
+            {/* Age + City */}
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <div style={{ width: '90px', flexShrink: 0 }}>
+                <label style={labelStyle} htmlFor="age">Age</label>
+                <input
+                  id="age"
+                  type="number"
+                  min={18}
+                  max={60}
+                  value={age}
+                  onChange={e => handleAgeChange(e.target.value === '' ? '' : Number(e.target.value))}
+                  placeholder="27"
+                  style={{ ...inputStyle, borderColor: errors.age ? '#D94F4F' : 'var(--border)' }}
+                />
+                {errors.age && <p style={{ fontSize: '12px', color: '#D94F4F', marginTop: '4px' }}>{errors.age}</p>}
+              </div>
+              <div style={{ flex: 1 }}>
+                <label style={labelStyle} htmlFor="city">City</label>
+                <select
+                  id="city"
+                  value={city}
+                  onChange={e => handleCityChange(e.target.value)}
+                  style={{ ...inputStyle, borderColor: errors.city ? '#D94F4F' : 'var(--border)' }}
                 >
-                  {opt.label}
-                </button>
-              ))}
+                  <option value="">Select city</option>
+                  {cities.map(c => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+                {errors.city && <p style={{ fontSize: '12px', color: '#D94F4F', marginTop: '4px' }}>{errors.city}</p>}
+              </div>
             </div>
-            {errors.companyType && <p className="text-red-500 text-sm mt-1">{errors.companyType}</p>}
-          </div>
 
-          {/* Risk appetite — slider */}
-          <div>
-            <p style={labelStyle}>Risk appetite</p>
-            <input
-              type="range"
-              min={0}
-              max={2}
-              step={1}
-              value={riskIndex}
-              onChange={e => setRiskIndex(Number(e.target.value))}
-              className="w-full"
-              style={{ accentColor: 'var(--brand)' }}
-            />
-            <div className="mt-2">
-              <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
-                {RISK_LABELS[riskIndex].label}
-              </p>
-              <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                {RISK_LABELS[riskIndex].desc}
-              </p>
+            {/* Company type */}
+            <div>
+              <p style={labelStyle}>Company type</p>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                {COMPANY_TYPES.map(opt => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => handleCompanyTypeChange(opt.value)}
+                    style={{
+                      height: '36px',
+                      borderRadius: '6px',
+                      fontSize: '13px',
+                      fontWeight: 500,
+                      cursor: 'pointer',
+                      border: `1px solid ${companyType === opt.value ? 'var(--brand)' : errors.companyType ? '#D94F4F' : 'var(--border)'}`,
+                      background: companyType === opt.value ? 'var(--brand)' : 'var(--surface)',
+                      color: companyType === opt.value ? '#fff' : 'var(--ink-2)',
+                      transition: 'all 0.1s',
+                    }}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+              {errors.companyType && <p style={{ fontSize: '12px', color: '#D94F4F', marginTop: '4px' }}>{errors.companyType}</p>}
             </div>
-          </div>
 
-          <button
-            type="submit"
-            disabled={loading || !isFormValid}
-            className="w-full text-white font-semibold transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-            style={{ background: 'var(--brand)', height: '52px', borderRadius: '12px' }}
-            onMouseOver={e => !(loading || !isFormValid) && ((e.target as HTMLElement).style.background = 'var(--brand-hover)')}
-            onMouseOut={e => !(loading || !isFormValid) && ((e.target as HTMLElement).style.background = 'var(--brand)')}
-          >
-            {loading ? 'Saving…' : 'Build my Twin →'}
-          </button>
-        </form>
+            {/* Risk appetite */}
+            <div>
+              <p style={labelStyle}>Risk appetite</p>
+              <input
+                type="range"
+                min={0}
+                max={2}
+                step={1}
+                value={riskIndex}
+                onChange={e => setRiskIndex(Number(e.target.value))}
+                className="w-full"
+                style={{ accentColor: 'var(--brand)' }}
+              />
+              <div style={{ marginTop: '8px' }}>
+                <p style={{ fontSize: '14px', fontWeight: 600, color: 'var(--ink)' }}>{RISK_LABELS[riskIndex].label}</p>
+                <p style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '2px' }}>{RISK_LABELS[riskIndex].desc}</p>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading || !isFormValid}
+              style={{
+                width: '100%',
+                height: '36px',
+                background: 'var(--brand)',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '6px',
+                fontSize: '14px',
+                fontWeight: 500,
+                cursor: loading || !isFormValid ? 'not-allowed' : 'pointer',
+                opacity: loading || !isFormValid ? 0.6 : 1,
+                transition: 'background 0.1s',
+              }}
+              onMouseEnter={e => { if (!(loading || !isFormValid)) e.currentTarget.style.background = 'var(--brand-hover)' }}
+              onMouseLeave={e => { if (!(loading || !isFormValid)) e.currentTarget.style.background = 'var(--brand)' }}
+            >
+              {loading ? 'Saving…' : 'Build my Twin →'}
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   )

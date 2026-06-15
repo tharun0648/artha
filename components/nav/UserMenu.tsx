@@ -41,19 +41,44 @@ export default function UserMenu({ email }: { email: string }) {
 
       {open && (
         <div
-          className="absolute right-0 mt-2 w-40 rounded-md border border-gray-200 bg-white shadow-md z-50"
-          style={{ top: '100%' }}
+          className="absolute right-0 mt-2 w-40 z-50"
+          style={{
+            top: '100%',
+            background: 'var(--surface)',
+            border: '1px solid var(--border)',
+            borderRadius: '8px',
+          }}
         >
           <button
             onClick={() => { setOpen(false); router.push('/settings') }}
-            className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 rounded-t-md"
-            style={{ color: '#1A1A1A' }}
+            className="w-full text-left px-4 py-2.5"
+            style={{
+              fontSize: '14px',
+              color: 'var(--ink)',
+              background: 'none',
+              border: 'none',
+              borderRadius: '8px 8px 0 0',
+              cursor: 'pointer',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-2)')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'none')}
           >
             My profile
           </button>
+          <div style={{ borderTop: '1px solid var(--border)' }} />
           <button
             onClick={handleSignOut}
-            className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 rounded-b-md flex items-center gap-2 text-red-500"
+            className="w-full text-left px-4 py-2.5 flex items-center gap-2"
+            style={{
+              fontSize: '14px',
+              color: 'var(--risk-high)',
+              background: 'none',
+              border: 'none',
+              borderRadius: '0 0 8px 8px',
+              cursor: 'pointer',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-2)')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'none')}
           >
             <LogOut size={14} />
             Sign out

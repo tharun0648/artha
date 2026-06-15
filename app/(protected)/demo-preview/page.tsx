@@ -22,9 +22,10 @@ const GOAL_LABELS: Record<string, string> = {
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex justify-between py-2 border-b last:border-b-0" style={{ borderColor: 'var(--border)' }}>
-      <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{label}</p>
-      <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{value}</p>
+    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid var(--border)' }}
+         className="last:border-b-0">
+      <p style={{ fontSize: '14px', color: 'var(--ink-2)' }}>{label}</p>
+      <p style={{ fontSize: '15px', fontWeight: 600, color: 'var(--ink)' }}>{value}</p>
     </div>
   )
 }
@@ -51,13 +52,9 @@ export default async function DemoPreviewPage() {
 
   if (!profile || !twin) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-16 text-center">
-        <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>
-          Demo data not found. Contact support.
-        </p>
-        <Link href="/login" className="text-sm underline" style={{ color: 'var(--brand)' }}>
-          Back to login
-        </Link>
+      <div style={{ maxWidth: '480px', margin: '64px auto', textAlign: 'center' }}>
+        <p style={{ fontSize: '14px', color: 'var(--ink-2)', marginBottom: '16px' }}>Demo data not found. Contact support.</p>
+        <Link href="/login" style={{ fontSize: '14px', color: 'var(--brand)' }}>Back to login</Link>
       </div>
     )
   }
@@ -78,22 +75,22 @@ export default async function DemoPreviewPage() {
   return (
     <div>
       {/* Demo banner */}
-      <div className="w-full bg-amber-50 border-b border-amber-200 py-3 px-4 flex items-center justify-between">
-        <p className="text-sm text-amber-800">
-          You&apos;re viewing a demo account. Sign in with Google to use Artha with your own data.
+      <div style={{ background: '#FFFBEB', borderBottom: '1px solid #FDE68A', padding: '12px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <p style={{ fontSize: '14px', color: '#92400E' }}>
+          You&apos;re viewing a demo account. Sign in with Google to use A₹tha with your own data.
         </p>
-        <Link href="/login" className="text-sm font-medium text-amber-800 underline whitespace-nowrap ml-4">
+        <Link href="/login" style={{ fontSize: '14px', fontWeight: 500, color: '#92400E', textDecoration: 'underline', whiteSpace: 'nowrap', marginLeft: '16px' }}>
           Sign in →
         </Link>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4">
-        <div className="bg-white border border-gray-200 rounded-xl p-6 mt-8">
-          <h1 className="text-xl font-semibold mb-6" style={{ color: 'var(--text-primary)' }}>
+      <div style={{ maxWidth: '560px', margin: '0 auto', padding: '32px 24px' }}>
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '8px', padding: '24px' }}>
+          <h1 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--ink)', marginBottom: '20px' }}>
             Your Financial Snapshot
           </h1>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8">
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: '32px' }}>
             <Row label="Age & City" value={`${profile.age} · ${profile.city}`} />
             <Row label="Monthly income" value={fmt(income)} />
             <Row label="Monthly surplus" value={fmt(surplus)} />
@@ -103,15 +100,15 @@ export default async function DemoPreviewPage() {
           </div>
 
           {subscriptions.length > 0 && (
-            <div className="mt-6">
-              <p className="text-sm font-medium mb-3" style={{ color: 'var(--text-secondary)' }}>
+            <div style={{ marginTop: '20px' }}>
+              <p style={{ fontSize: '12px', fontWeight: 500, color: 'var(--muted)', letterSpacing: '0.02em', marginBottom: '10px' }}>
                 Subscriptions
               </p>
-              <div className="space-y-2">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {subscriptions.map((sub, i) => (
-                  <div key={i} className="flex justify-between text-sm">
-                    <span style={{ color: 'var(--text-primary)' }}>{sub.name}</span>
-                    <span style={{ color: 'var(--text-secondary)' }}>₹{sub.monthly_amount}/mo</span>
+                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ fontSize: '14px', color: 'var(--ink)' }}>{sub.name}</span>
+                    <span style={{ fontSize: '14px', color: 'var(--ink-2)' }}>₹{sub.monthly_amount}/mo</span>
                   </div>
                 ))}
               </div>
@@ -120,8 +117,13 @@ export default async function DemoPreviewPage() {
 
           <Link
             href="/dashboard"
-            className="mt-8 w-full flex items-center justify-center py-3 rounded-md text-white text-sm font-medium hover:opacity-90 transition-opacity"
-            style={{ background: '#4F6F52' }}
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              height: '36px', marginTop: '24px',
+              background: 'var(--brand)', color: '#fff',
+              borderRadius: '6px', fontSize: '14px', fontWeight: 500,
+              textDecoration: 'none',
+            }}
           >
             Go to my dashboard →
           </Link>

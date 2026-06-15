@@ -5,21 +5,35 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import StepIndicator from '@/components/onboarding/StepIndicator'
 
-const labelStyle = {
+const labelStyle: React.CSSProperties = {
   display: 'block',
-  fontSize: '13px',
+  fontSize: '12px',
   fontWeight: 500,
-  color: 'var(--text-secondary)',
+  color: 'var(--muted)',
+  letterSpacing: '0.02em',
   marginBottom: '6px',
-} as const
+}
 
-const sectionHeadStyle = {
+const sectionHeadStyle: React.CSSProperties = {
   fontSize: '11px',
   fontWeight: 600,
-  textTransform: 'uppercase' as const,
-  letterSpacing: '0.06em',
-  color: 'var(--text-muted)',
+  textTransform: 'uppercase',
+  letterSpacing: '0.08em',
+  color: 'var(--muted)',
   marginBottom: '12px',
+}
+
+const inputBase: React.CSSProperties = {
+  width: '100%',
+  height: '36px',
+  padding: '8px 12px',
+  borderRadius: '6px',
+  border: '1px solid var(--border)',
+  background: 'var(--surface)',
+  color: 'var(--ink)',
+  fontSize: '14px',
+  outline: 'none',
+  boxSizing: 'border-box',
 }
 
 function RupeeInput({
@@ -44,23 +58,18 @@ function RupeeInput({
       <label style={labelStyle} htmlFor={id}>
         {label}
         {sublabel && (
-          <span style={{ color: 'var(--text-muted)', fontWeight: 400, marginLeft: '4px', fontSize: '12px' }}>
+          <span style={{ color: 'var(--muted)', fontWeight: 400, marginLeft: '4px' }}>
             — {sublabel}
           </span>
         )}
         {optional && (
-          <span style={{ color: 'var(--text-muted)', fontWeight: 400, marginLeft: '4px', fontSize: '12px' }}>
+          <span style={{ color: 'var(--muted)', fontWeight: 400, marginLeft: '4px' }}>
             (optional)
           </span>
         )}
       </label>
-      <div className="relative">
-        <span
-          className="absolute left-3 top-1/2 -translate-y-1/2 text-sm select-none"
-          style={{ color: 'var(--text-muted)' }}
-        >
-          ₹
-        </span>
+      <div style={{ position: 'relative' }}>
+        <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', fontSize: '14px', color: 'var(--muted)', userSelect: 'none' }}>₹</span>
         <input
           id={id}
           type="number"
@@ -68,21 +77,10 @@ function RupeeInput({
           value={value === 0 ? '' : value}
           onChange={e => onChange(e.target.value === '' ? 0 : Number(e.target.value))}
           placeholder="0"
-          className="w-full rounded-xl border"
-          style={{
-            paddingLeft: '28px',
-            paddingRight: '12px',
-            paddingTop: '10px',
-            paddingBottom: '10px',
-            borderColor: error ? '#ef4444' : 'var(--border)',
-            background: 'var(--bg-surface)',
-            color: 'var(--text-primary)',
-            fontSize: '14px',
-            outline: 'none',
-          }}
+          style={{ ...inputBase, paddingLeft: '26px', borderColor: error ? '#D94F4F' : 'var(--border)' }}
         />
       </div>
-      {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
+      {error && <p style={{ fontSize: '12px', color: '#D94F4F', marginTop: '4px' }}>{error}</p>}
     </div>
   )
 }
@@ -97,12 +95,7 @@ type FieldErrors = {
 }
 
 function validateFields(
-  income: number,
-  rent: number,
-  food: number,
-  other: number,
-  emi: number,
-  savings: number
+  income: number, rent: number, food: number, other: number, emi: number, savings: number
 ): FieldErrors {
   const e: FieldErrors = {}
   if (income <= 0) e.income = 'Monthly take-home must be greater than 0'
@@ -135,17 +128,17 @@ export default function Step2Page() {
   const PERSONAS = {
     graduate: {
       label: 'Fresh Graduate 🎓',
-      description: 'Early career, building first financial habits. Low savings, no debt, high potential.',
+      description: 'Early career, building first financial habits.',
       values: { income: 45000, lastYear: 35000, rent: 12000, food: 6000, other: 8500, emi: 0, savings: 50000, equity: 0, epf: 0 },
     },
     midcareer: {
-      label: 'Mid-career Professional 💼',
-      description: 'Stable income, some EMIs, building wealth steadily. Typical Bangalore/Mumbai professional.',
+      label: 'Mid-career 💼',
+      description: 'Stable income, some EMIs, building wealth.',
       values: { income: 85000, lastYear: 70000, rent: 22000, food: 8000, other: 11000, emi: 15000, savings: 300000, equity: 150000, epf: 80000 },
     },
     senior: {
-      label: 'Senior with Commitments 🏠',
-      description: 'High income, significant EMIs, large asset base. Managing wealth and commitments.',
+      label: 'Senior 🏠',
+      description: 'High income, significant EMIs, large asset base.',
       values: { income: 150000, lastYear: 130000, rent: 35000, food: 12000, other: 19000, emi: 45000, savings: 800000, equity: 500000, epf: 300000 },
     },
   } as const
@@ -167,7 +160,6 @@ export default function Step2Page() {
 
   const surplus = monthlyIncome - rent - food - other - emi
   const surplusPositive = surplus >= 0
-
   const isFormValid = monthlyIncome > 0
 
   const revalidate = useCallback(
@@ -238,185 +230,148 @@ export default function Step2Page() {
   }
 
   return (
-    <div>
-      <StepIndicator currentStep={2} />
-      <div className="mb-6">
-        <h2 className="text-2xl font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>
-          Money Model
-        </h2>
-        <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-          Your income, spending, and assets — be honest, this is just for you.
-        </p>
-      </div>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '40px 24px' }}>
+      <div style={{ width: '100%', maxWidth: '480px' }}>
+        <StepIndicator currentStep={2} />
 
-      {/* Persona quick-fill */}
-      <div className="mb-5">
-        <p className="text-xs font-medium mb-3" style={{ color: 'var(--text-muted)' }}>
-          Quick start — pick a profile similar to yours
-        </p>
-        <div className="flex flex-col sm:flex-row gap-3">
-          {(Object.keys(PERSONAS) as Array<keyof typeof PERSONAS>).map(key => (
-            <button
-              key={key}
-              type="button"
-              onClick={() => applyPersona(key)}
-              className="flex-1 border rounded-lg px-4 py-3 text-sm text-left transition-colors hover:border-[#4F6F52] hover:bg-green-50"
-              style={{
-                borderColor: selectedPersona === key ? '#4F6F52' : 'var(--border)',
-                background: selectedPersona === key ? '#f0fdf4' : 'var(--bg-surface)',
-                color: 'var(--text-primary)',
-              }}
-            >
-              {PERSONAS[key].label}
-            </button>
-          ))}
-        </div>
-        {selectedPersona && (
-          <p className="text-sm italic mt-2" style={{ color: 'var(--text-muted)' }}>
-            {PERSONAS[selectedPersona].description}
+        {/* Persona quick-fill */}
+        <div style={{ marginBottom: '16px' }}>
+          <p style={{ fontSize: '12px', fontWeight: 500, color: 'var(--muted)', letterSpacing: '0.02em', marginBottom: '10px' }}>
+            Quick start — pick a profile similar to yours
           </p>
-        )}
-      </div>
-
-      <div
-        className="rounded-2xl border p-6"
-        style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)', boxShadow: 'var(--shadow-md)' }}
-      >
-        <form onSubmit={handleNext} className="space-y-8">
-
-          {/* Income */}
-          <section>
-            <p style={sectionHeadStyle}>Income</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <RupeeInput
-                id="income"
-                label="Monthly take-home salary"
-                value={monthlyIncome}
-                onChange={makeHandler(setMonthlyIncome, 'income')}
-                error={errors.income}
-              />
-              <RupeeInput
-                id="last-income"
-                label="Income 12 months ago"
-                sublabel="for growth tracking"
-                value={lastYearIncome}
-                onChange={setLastYearIncome}
-              />
-            </div>
-          </section>
-
-          {/* Outgoings */}
-          <section>
-            <p style={sectionHeadStyle}>Monthly Outgoings</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <RupeeInput
-                id="rent"
-                label="Total rent & housing"
-                value={rent}
-                onChange={makeHandler(setRent, 'rent')}
-                error={errors.rent}
-              />
-              <RupeeInput
-                id="food"
-                label="Food, dining & groceries"
-                value={food}
-                onChange={makeHandler(setFood, 'food')}
-                error={errors.food}
-              />
-              <div>
-                <label style={labelStyle} htmlFor="other">
-                  Everything else
-                  <span style={{ color: 'var(--text-muted)', fontWeight: 400, display: 'block', fontSize: '12px' }}>
-                    transport, entertainment, other
-                  </span>
-                </label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm select-none"
-                        style={{ color: 'var(--text-muted)' }}>₹</span>
-                  <input
-                    id="other"
-                    type="number"
-                    min={0}
-                    value={other === 0 ? '' : other}
-                    onChange={e => makeHandler(setOther, 'other')(e.target.value === '' ? 0 : Number(e.target.value))}
-                    placeholder="0"
-                    className="w-full rounded-xl border"
-                    style={{
-                      paddingLeft: '28px', paddingRight: '12px', paddingTop: '10px', paddingBottom: '10px',
-                      borderColor: errors.other ? '#ef4444' : 'var(--border)',
-                      background: 'var(--bg-surface)', color: 'var(--text-primary)', fontSize: '14px', outline: 'none',
-                    }}
-                  />
-                </div>
-                {errors.other && <p className="text-red-500 text-sm mt-1">{errors.other}</p>}
-              </div>
-              <RupeeInput
-                id="emi"
-                label="Total EMIs"
-                value={emi}
-                onChange={makeHandler(setEmi, 'emi')}
-                error={errors.emi}
-              />
-            </div>
-          </section>
-
-          {/* Live surplus */}
-          <div
-            className="rounded-xl px-4 py-3 flex items-center justify-between"
-            style={{ background: surplusPositive ? '#F0F7F1' : '#FDF2F0' }}
-          >
-            <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
-              {surplusPositive ? 'You have' : 'You are short'} each month
-            </span>
-            <span
-              className="text-base font-bold"
-              style={{ color: surplusPositive ? 'var(--success)' : 'var(--risk-high)' }}
-            >
-              {surplusPositive ? '' : '−'}₹{Math.abs(surplus).toLocaleString('en-IN')}
-            </span>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            {(Object.keys(PERSONAS) as Array<keyof typeof PERSONAS>).map(key => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => applyPersona(key)}
+                style={{
+                  flex: 1,
+                  padding: '6px 12px',
+                  borderRadius: '6px',
+                  fontSize: '13px',
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  border: `1px solid ${selectedPersona === key ? 'var(--brand)' : 'var(--border)'}`,
+                  background: selectedPersona === key ? 'var(--brand-surface)' : 'var(--surface)',
+                  color: selectedPersona === key ? 'var(--brand)' : 'var(--ink-2)',
+                  transition: 'all 0.1s',
+                  textAlign: 'left',
+                }}
+              >
+                {PERSONAS[key].label}
+              </button>
+            ))}
           </div>
+          {selectedPersona && (
+            <p style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '8px' }}>
+              {PERSONAS[selectedPersona].description}
+            </p>
+          )}
+        </div>
 
-          {/* Assets */}
-          <section>
-            <p style={sectionHeadStyle}>What You Have</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <RupeeInput
-                id="savings"
-                label="Savings & FD"
-                value={savings}
-                onChange={makeHandler(setSavings, 'savings')}
-                error={errors.savings}
-              />
-              <RupeeInput
-                id="equity"
-                label="Investments"
-                sublabel="stocks, mutual funds"
-                value={equity}
-                onChange={setEquity}
-              />
-              <div className="sm:col-span-2">
-                <RupeeInput
-                  id="epf"
-                  label="EPF balance"
-                  optional
-                  value={epf}
-                  onChange={setEpf}
-                />
+        {/* Form card */}
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '8px', padding: '32px' }}>
+          <h2 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--ink)', marginBottom: '6px' }}>Money Model</h2>
+          <p style={{ fontSize: '14px', color: 'var(--ink-2)', lineHeight: 1.6, marginBottom: '24px' }}>
+            Your income, spending, and assets — be honest, this is just for you.
+          </p>
+
+          <form onSubmit={handleNext} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+
+            {/* Income */}
+            <section>
+              <p style={sectionHeadStyle}>Income</p>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <RupeeInput id="income" label="Monthly take-home" value={monthlyIncome} onChange={makeHandler(setMonthlyIncome, 'income')} error={errors.income} />
+                <RupeeInput id="last-income" label="Income 12 months ago" sublabel="growth tracking" value={lastYearIncome} onChange={setLastYearIncome} />
               </div>
-            </div>
-          </section>
+            </section>
 
-          <button
-            type="submit"
-            disabled={loading || !isFormValid}
-            className="w-full text-white font-semibold transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-            style={{ background: 'var(--brand)', height: '52px', borderRadius: '12px' }}
-            onMouseOver={e => !(loading || !isFormValid) && ((e.target as HTMLElement).style.background = 'var(--brand-hover)')}
-            onMouseOut={e => !(loading || !isFormValid) && ((e.target as HTMLElement).style.background = 'var(--brand)')}
-          >
-            {loading ? 'Saving…' : 'Save & continue →'}
-          </button>
-        </form>
+            {/* Outgoings */}
+            <section>
+              <p style={sectionHeadStyle}>Monthly Outgoings</p>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <RupeeInput id="rent" label="Rent & housing" value={rent} onChange={makeHandler(setRent, 'rent')} error={errors.rent} />
+                <RupeeInput id="food" label="Food & groceries" value={food} onChange={makeHandler(setFood, 'food')} error={errors.food} />
+                <div>
+                  <label style={labelStyle} htmlFor="other">
+                    Everything else
+                    <span style={{ color: 'var(--muted)', fontWeight: 400, display: 'block', fontSize: '11px' }}>
+                      transport, entertainment, other
+                    </span>
+                  </label>
+                  <div style={{ position: 'relative' }}>
+                    <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', fontSize: '14px', color: 'var(--muted)', userSelect: 'none' }}>₹</span>
+                    <input
+                      id="other"
+                      type="number"
+                      min={0}
+                      value={other === 0 ? '' : other}
+                      onChange={e => makeHandler(setOther, 'other')(e.target.value === '' ? 0 : Number(e.target.value))}
+                      placeholder="0"
+                      style={{ ...inputBase, paddingLeft: '26px', borderColor: errors.other ? '#D94F4F' : 'var(--border)' }}
+                    />
+                  </div>
+                  {errors.other && <p style={{ fontSize: '12px', color: '#D94F4F', marginTop: '4px' }}>{errors.other}</p>}
+                </div>
+                <RupeeInput id="emi" label="Total EMIs" value={emi} onChange={makeHandler(setEmi, 'emi')} error={errors.emi} />
+              </div>
+            </section>
+
+            {/* Live surplus */}
+            <div style={{
+              borderRadius: '6px',
+              padding: '12px 16px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              background: surplusPositive ? 'var(--brand-surface)' : '#FDF2F0',
+              border: `1px solid ${surplusPositive ? 'var(--brand)' : '#D94F4F'}`,
+            }}>
+              <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--ink-2)' }}>
+                {surplusPositive ? 'You have' : 'You are short'} each month
+              </span>
+              <span style={{ fontSize: '15px', fontWeight: 600, color: surplusPositive ? 'var(--brand)' : '#D94F4F' }}>
+                {surplusPositive ? '' : '−'}₹{Math.abs(surplus).toLocaleString('en-IN')}
+              </span>
+            </div>
+
+            {/* Assets */}
+            <section>
+              <p style={sectionHeadStyle}>What You Have</p>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <RupeeInput id="savings" label="Savings & FD" value={savings} onChange={makeHandler(setSavings, 'savings')} error={errors.savings} />
+                <RupeeInput id="equity" label="Investments" sublabel="stocks, MF" value={equity} onChange={setEquity} />
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <RupeeInput id="epf" label="EPF balance" optional value={epf} onChange={setEpf} />
+                </div>
+              </div>
+            </section>
+
+            <button
+              type="submit"
+              disabled={loading || !isFormValid}
+              style={{
+                width: '100%',
+                height: '36px',
+                background: 'var(--brand)',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '6px',
+                fontSize: '14px',
+                fontWeight: 500,
+                cursor: loading || !isFormValid ? 'not-allowed' : 'pointer',
+                opacity: loading || !isFormValid ? 0.6 : 1,
+                transition: 'background 0.1s',
+              }}
+              onMouseEnter={e => { if (!(loading || !isFormValid)) e.currentTarget.style.background = 'var(--brand-hover)' }}
+              onMouseLeave={e => { if (!(loading || !isFormValid)) e.currentTarget.style.background = 'var(--brand)' }}
+            >
+              {loading ? 'Saving…' : 'Save & continue →'}
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   )

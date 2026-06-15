@@ -15,9 +15,9 @@ function fmt(n: number): string {
 
 function verdictColor(v: string): string {
   const lower = v.toLowerCase()
-  if (lower.includes('go for') || lower.includes('recommended')) return 'var(--success)'
-  if (lower.includes('not recommended') || lower.includes('avoid')) return 'var(--risk-high)'
-  return 'var(--warning)'
+  if (lower.includes('go for') || lower.includes('recommended')) return 'var(--brand)'
+  if (lower.includes('not recommended') || lower.includes('avoid')) return '#D94F4F'
+  return 'var(--accent)'
 }
 
 const SCENARIO_LABELS: Record<string, string> = {
@@ -26,101 +26,78 @@ const SCENARIO_LABELS: Record<string, string> = {
   'job-switch': 'switch jobs',
 }
 
+const card: React.CSSProperties = { background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '8px', padding: '20px' }
+const nested: React.CSSProperties = { background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: '6px', padding: '12px' }
+
 export default function SimulationCard({ result, scenario }: Props) {
   const color = verdictColor(result.verdict)
   const scenarioLabel = scenario ? (SCENARIO_LABELS[scenario] ?? 'make this move') : 'make this move'
 
   return (
-    <div className="space-y-3">
-      {/* Plain-English summary */}
-      <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+      <p style={{ fontSize: '14px', color: 'var(--muted)' }}>
         Here&apos;s what happens to your finances if you {scenarioLabel}.
       </p>
 
       {/* Verdict */}
-      <div
-        className="rounded-2xl border p-5"
-        style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)', boxShadow: 'var(--shadow-md)' }}
-      >
-        <p className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: 'var(--text-muted)' }}>
+      <div style={card}>
+        <p style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--muted)', marginBottom: '8px' }}>
           What this means for you
         </p>
-        <p className="text-base font-semibold mb-1" style={{ color }}>
-          {result.verdict}
-        </p>
-        <p className="text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-          {result.goal_impact}
-        </p>
+        <p style={{ fontSize: '15px', fontWeight: 600, color, marginBottom: '6px' }}>{result.verdict}</p>
+        <p style={{ fontSize: '14px', lineHeight: 1.6, color: 'var(--ink-2)' }}>{result.goal_impact}</p>
       </div>
 
       {/* Path comparison */}
-      <div
-        className="rounded-2xl border p-5"
-        style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}
-      >
-        <p className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: 'var(--text-muted)' }}>
+      <div style={card}>
+        <p style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--muted)', marginBottom: '12px' }}>
           Projection comparison
         </p>
-        <div className="grid grid-cols-2 gap-3">
-          <div
-            className="rounded-xl p-3 space-y-2"
-            style={{ background: 'var(--bg-surface-secondary)' }}
-          >
-            <p className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>If you don&apos;t do this</p>
-            <div>
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Your money in 5 years</p>
-              <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
-                {fmt(result.current_path.net_worth_5yr)}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Your money in 10 years</p>
-              <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
-                {fmt(result.current_path.net_worth_10yr)}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Goal achieved by</p>
-              <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
-                {result.current_path.goal_achieved_year ?? '—'}
-              </p>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+          <div style={nested}>
+            <p style={{ fontSize: '12px', fontWeight: 500, color: 'var(--muted)', marginBottom: '8px' }}>If you don&apos;t do this</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <div>
+                <p style={{ fontSize: '12px', color: 'var(--muted)' }}>In 5 years</p>
+                <p style={{ fontSize: '15px', fontWeight: 600, color: 'var(--ink)' }}>{fmt(result.current_path.net_worth_5yr)}</p>
+              </div>
+              <div>
+                <p style={{ fontSize: '12px', color: 'var(--muted)' }}>In 10 years</p>
+                <p style={{ fontSize: '15px', fontWeight: 600, color: 'var(--ink)' }}>{fmt(result.current_path.net_worth_10yr)}</p>
+              </div>
+              <div>
+                <p style={{ fontSize: '12px', color: 'var(--muted)' }}>Goal by</p>
+                <p style={{ fontSize: '15px', fontWeight: 600, color: 'var(--ink)' }}>{result.current_path.goal_achieved_year ?? '—'}</p>
+              </div>
             </div>
           </div>
 
-          <div
-            className="rounded-xl p-3 space-y-2"
-            style={{ background: 'var(--brand-soft)', border: '1px solid var(--brand)' }}
-          >
-            <p className="text-xs font-medium" style={{ color: 'var(--brand)' }}>If you go ahead</p>
-            <div>
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Your money in 5 years</p>
-              <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
-                {fmt(result.scenario_path.net_worth_5yr)}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Your money in 10 years</p>
-              <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
-                {fmt(result.scenario_path.net_worth_10yr)}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Goal achieved by</p>
-              <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
-                {result.scenario_path.goal_achieved_year ?? '—'}
-              </p>
+          <div style={{ ...nested, border: '1px solid var(--brand)', background: 'var(--brand-surface)' }}>
+            <p style={{ fontSize: '12px', fontWeight: 500, color: 'var(--brand)', marginBottom: '8px' }}>If you go ahead</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <div>
+                <p style={{ fontSize: '12px', color: 'var(--muted)' }}>In 5 years</p>
+                <p style={{ fontSize: '15px', fontWeight: 600, color: 'var(--ink)' }}>{fmt(result.scenario_path.net_worth_5yr)}</p>
+              </div>
+              <div>
+                <p style={{ fontSize: '12px', color: 'var(--muted)' }}>In 10 years</p>
+                <p style={{ fontSize: '15px', fontWeight: 600, color: 'var(--ink)' }}>{fmt(result.scenario_path.net_worth_10yr)}</p>
+              </div>
+              <div>
+                <p style={{ fontSize: '12px', color: 'var(--muted)' }}>Goal by</p>
+                <p style={{ fontSize: '15px', fontWeight: 600, color: 'var(--ink)' }}>{result.scenario_path.goal_achieved_year ?? '—'}</p>
+              </div>
             </div>
           </div>
         </div>
 
         {result.scenario_path.break_even_year && (
-          <p className="text-xs mt-3" style={{ color: 'var(--text-muted)' }}>
+          <p style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '12px' }}>
             Break-even: {result.scenario_path.break_even_year} · Monthly surplus after: {fmt(result.scenario_path.monthly_surplus_after)}
           </p>
         )}
-
         {result.assumption_note && (
-          <p className="text-xs mt-2 leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+          <p style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '8px', lineHeight: 1.5 }}>
             Assumptions: {result.assumption_note}
           </p>
         )}
@@ -128,38 +105,27 @@ export default function SimulationCard({ result, scenario }: Props) {
 
       {/* Risks & opportunities */}
       {(result.key_risks.length > 0 || result.key_opportunities.length > 0) && (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
           {result.key_risks.length > 0 && (
-            <div
-              className="rounded-2xl border p-4"
-              style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}
-            >
-              <p className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: 'var(--risk-high)' }}>
+            <div style={card}>
+              <p style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#D94F4F', marginBottom: '8px' }}>
                 Watch out for
               </p>
-              <ul className="space-y-1.5">
+              <ul style={{ display: 'flex', flexDirection: 'column', gap: '6px', listStyle: 'none', margin: 0, padding: 0 }}>
                 {result.key_risks.map((r, i) => (
-                  <li key={i} className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                    ⚠ {r}
-                  </li>
+                  <li key={i} style={{ fontSize: '14px', color: 'var(--ink-2)' }}>⚠ {r}</li>
                 ))}
               </ul>
             </div>
           )}
-
           {result.key_opportunities.length > 0 && (
-            <div
-              className="rounded-2xl border p-4"
-              style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}
-            >
-              <p className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: 'var(--success)' }}>
+            <div style={card}>
+              <p style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--brand)', marginBottom: '8px' }}>
                 Upside if you do this
               </p>
-              <ul className="space-y-1.5">
+              <ul style={{ display: 'flex', flexDirection: 'column', gap: '6px', listStyle: 'none', margin: 0, padding: 0 }}>
                 {result.key_opportunities.map((o, i) => (
-                  <li key={i} className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                    ✓ {o}
-                  </li>
+                  <li key={i} style={{ fontSize: '14px', color: 'var(--ink-2)' }}>✓ {o}</li>
                 ))}
               </ul>
             </div>

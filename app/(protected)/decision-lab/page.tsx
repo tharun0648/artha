@@ -29,9 +29,22 @@ function fmt(n: number): string {
 }
 
 function probabilityColor(p: number): string {
-  if (p >= 70) return 'var(--success)'
-  if (p >= 45) return 'var(--warning)'
-  return 'var(--risk-high)'
+  if (p >= 70) return 'var(--brand)'
+  if (p >= 40) return 'var(--accent)'
+  return '#D94F4F'
+}
+
+const card: React.CSSProperties = {
+  background: 'var(--surface)',
+  border: '1px solid var(--border)',
+  borderRadius: '8px',
+  padding: '16px',
+}
+
+const nested: React.CSSProperties = {
+  background: 'var(--surface-2)',
+  border: '1px solid var(--border)',
+  borderRadius: '6px',
 }
 
 // ── Twin sidebar ──────────────────────────────────────────────────────────────
@@ -39,34 +52,34 @@ function probabilityColor(p: number): string {
 function TwinSidebar({ twin, verdict }: { twin: FinancialTwin; verdict: VerdictOutput | null }) {
   const surplus = twin.monthly_income - twin.total_monthly_expenses
   return (
-    <div className="rounded-2xl border p-4 space-y-3" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}>
-      <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Your Twin</p>
-      <div className="grid grid-cols-2 gap-2">
+    <div style={card}>
+      <p style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--muted)', marginBottom: '12px' }}>Your Twin</p>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
         <div>
-          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Income</p>
-          <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{fmt(twin.monthly_income)}/mo</p>
+          <p style={{ fontSize: '12px', color: 'var(--muted)' }}>Income</p>
+          <p style={{ fontSize: '15px', fontWeight: 600, color: 'var(--ink)' }}>{fmt(twin.monthly_income)}/mo</p>
         </div>
         <div>
-          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Surplus</p>
-          <p className="text-sm font-semibold" style={{ color: surplus >= 0 ? 'var(--success)' : 'var(--risk-high)' }}>
+          <p style={{ fontSize: '12px', color: 'var(--muted)' }}>Surplus</p>
+          <p style={{ fontSize: '15px', fontWeight: 600, color: surplus >= 0 ? 'var(--brand)' : '#D94F4F' }}>
             {fmt(Math.abs(surplus))}/mo
           </p>
         </div>
       </div>
       {twin.primary_goal && (
-        <div>
-          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Goal</p>
-          <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+        <div style={{ marginBottom: '10px' }}>
+          <p style={{ fontSize: '12px', color: 'var(--muted)' }}>Goal</p>
+          <p style={{ fontSize: '14px', color: 'var(--ink)' }}>
             {GOAL_LABELS[twin.primary_goal] ?? twin.primary_goal} · {fmt(twin.goal_target_amount)} by {twin.goal_target_year}
           </p>
         </div>
       )}
       {verdict && (
-        <div className="rounded-xl px-3 py-2 flex items-center gap-2" style={{ background: 'var(--bg-surface-secondary)' }}>
-          <p className="text-base font-semibold tabular-nums" style={{ color: probabilityColor(verdict.goal_probability) }}>
+        <div style={{ ...nested, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <p style={{ fontSize: '40px', fontWeight: 700, color: probabilityColor(verdict.goal_probability), lineHeight: 1 }}>
             {verdict.goal_probability}%
           </p>
-          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>goal probability</p>
+          <p style={{ fontSize: '12px', color: 'var(--muted)' }}>goal probability</p>
         </div>
       )}
     </div>
@@ -87,6 +100,19 @@ function SpendCheckModal({
   const [item, setItem] = useState('')
   const [amount, setAmount] = useState('')
 
+  const inputStyle: React.CSSProperties = {
+    width: '100%',
+    height: '36px',
+    padding: '8px 12px',
+    borderRadius: '6px',
+    border: '1px solid var(--border)',
+    background: 'var(--surface)',
+    color: 'var(--ink)',
+    fontSize: '14px',
+    outline: 'none',
+    boxSizing: 'border-box',
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     const amt = parseFloat(amount)
@@ -96,28 +122,18 @@ function SpendCheckModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
-      style={{ background: 'rgba(0,0,0,0.35)' }}
+      style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', padding: '16px', background: 'rgba(0,0,0,0.35)' }}
       onClick={e => { if (e.target === e.currentTarget) onClose() }}
+      className="sm:items-center"
     >
-      <div
-        className="w-full max-w-sm rounded-2xl p-5 space-y-4"
-        style={{ background: 'var(--bg-surface)', boxShadow: '0 8px 32px rgba(0,0,0,0.12)' }}
-      >
-        <div className="flex items-center justify-between">
-          <p className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>Check a purchase</p>
-          <button
-            type="button"
-            onClick={onClose}
-            className="text-lg leading-none"
-            style={{ color: 'var(--text-muted)' }}
-          >
-            ×
-          </button>
+      <div style={{ width: '100%', maxWidth: '360px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '8px', padding: '20px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+          <p style={{ fontSize: '15px', fontWeight: 600, color: 'var(--ink)' }}>Check a purchase</p>
+          <button type="button" onClick={onClose} style={{ fontSize: '18px', color: 'var(--muted)', background: 'none', border: 'none', cursor: 'pointer', lineHeight: 1 }}>×</button>
         </div>
-        <form onSubmit={handleSubmit} className="space-y-3">
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <div>
-            <label className="text-xs font-medium block mb-1" style={{ color: 'var(--text-secondary)' }}>
+            <label style={{ fontSize: '12px', fontWeight: 500, color: 'var(--muted)', letterSpacing: '0.02em', display: 'block', marginBottom: '6px' }}>
               What are you buying?
             </label>
             <input
@@ -126,12 +142,11 @@ function SpendCheckModal({
               onChange={e => setItem(e.target.value)}
               placeholder="e.g. iPhone 16, MacBook, Vacation"
               autoFocus
-              className="w-full rounded-xl px-3 py-2.5 text-sm outline-none"
-              style={{ border: '1px solid var(--border)', background: 'var(--bg-surface-secondary)', color: 'var(--text-primary)' }}
+              style={inputStyle}
             />
           </div>
           <div>
-            <label className="text-xs font-medium block mb-1" style={{ color: 'var(--text-secondary)' }}>
+            <label style={{ fontSize: '12px', fontWeight: 500, color: 'var(--muted)', letterSpacing: '0.02em', display: 'block', marginBottom: '6px' }}>
               Amount (₹)
             </label>
             <input
@@ -140,15 +155,20 @@ function SpendCheckModal({
               onChange={e => setAmount(e.target.value)}
               placeholder="e.g. 80000"
               min={1}
-              className="w-full rounded-xl px-3 py-2.5 text-sm outline-none"
-              style={{ border: '1px solid var(--border)', background: 'var(--bg-surface-secondary)', color: 'var(--text-primary)' }}
+              style={inputStyle}
             />
           </div>
           <button
             type="submit"
             disabled={!item.trim() || !amount || loading}
-            className="w-full rounded-xl py-2.5 text-sm font-medium text-white disabled:opacity-40"
-            style={{ background: 'var(--brand)' }}
+            style={{
+              width: '100%', height: '36px',
+              background: 'var(--brand)', color: '#fff',
+              border: 'none', borderRadius: '6px',
+              fontSize: '14px', fontWeight: 500,
+              cursor: !item.trim() || !amount || loading ? 'not-allowed' : 'pointer',
+              opacity: !item.trim() || !amount || loading ? 0.4 : 1,
+            }}
           >
             {loading ? 'Checking…' : 'Check it →'}
           </button>
@@ -163,51 +183,41 @@ function SpendCheckModal({
 function CreditCardResults({ cards }: { cards: CreditCard[] }) {
   if (!cards.length) {
     return (
-      <div className="rounded-2xl border p-4" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}>
-        <p className="text-sm" style={{ color: 'var(--text-muted)' }}>No matching cards found for your income range.</p>
+      <div style={card}>
+        <p style={{ fontSize: '14px', color: 'var(--muted)' }}>No matching cards found for your income range.</p>
       </div>
     )
   }
 
   return (
-    <div className="space-y-3">
-      <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+      <p style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--muted)' }}>
         Recommended cards
       </p>
-      {cards.map(card => (
-        <div
-          key={card.card_id}
-          className="rounded-2xl border p-4 space-y-2"
-          style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}
-        >
-          <div className="flex items-start justify-between gap-3">
+      {cards.map(c => (
+        <div key={c.card_id} style={{ ...card, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px' }}>
             <div>
-              <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{card.name}</p>
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{card.issuer} · {card.tier}</p>
+              <p style={{ fontSize: '15px', fontWeight: 600, color: 'var(--ink)' }}>{c.name}</p>
+              <p style={{ fontSize: '12px', color: 'var(--muted)' }}>{c.issuer} · {c.tier}</p>
             </div>
-            {card.is_lifetime_free ? (
-              <span className="text-xs px-2 py-0.5 rounded-full shrink-0" style={{ background: 'var(--brand-soft)', color: 'var(--brand)' }}>
+            {c.is_lifetime_free ? (
+              <span style={{ fontSize: '11px', fontWeight: 500, color: 'var(--brand)', background: 'var(--brand-surface)', borderRadius: '4px', padding: '2px 8px', flexShrink: 0 }}>
                 Free forever
               </span>
             ) : (
-              <span className="text-xs shrink-0" style={{ color: 'var(--text-muted)' }}>
-                ₹{card.annual_fee_inr}/yr
-              </span>
+              <span style={{ fontSize: '12px', color: 'var(--muted)', flexShrink: 0 }}>₹{c.annual_fee_inr}/yr</span>
             )}
           </div>
-          <div className="flex flex-wrap gap-1.5">
-            {card.best_for_categories.slice(0, 4).map(cat => (
-              <span
-                key={cat}
-                className="text-xs px-2 py-0.5 rounded-full"
-                style={{ background: 'var(--bg-surface-secondary)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}
-              >
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+            {c.best_for_categories.slice(0, 4).map(cat => (
+              <span key={cat} style={{ fontSize: '11px', fontWeight: 500, color: 'var(--ink-2)', background: 'var(--surface-2)', borderRadius: '4px', padding: '2px 8px' }}>
                 {cat}
               </span>
             ))}
           </div>
-          {card.trap_warning && (
-            <p className="text-xs" style={{ color: 'var(--risk-medium)' }}>⚠ {card.trap_warning}</p>
+          {c.trap_warning && (
+            <p style={{ fontSize: '12px', color: 'var(--accent)' }}>⚠ {c.trap_warning}</p>
           )}
         </div>
       ))}
@@ -234,52 +244,62 @@ function ChatPanel({ messages, onSend, loading }: { messages: ChatMessage[]; onS
   }
 
   return (
-    <div
-      className="rounded-2xl border flex flex-col"
-      style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)', minHeight: '280px', maxHeight: '420px' }}
-    >
-      <div className="px-4 py-3 border-b" style={{ borderColor: 'var(--border)' }}>
-        <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Ask Artha</p>
+    <div style={{ ...card, display: 'flex', flexDirection: 'column', minHeight: '280px', maxHeight: '420px', padding: 0 }}>
+      <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>
+        <p style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--muted)' }}>Ask Artha</p>
       </div>
-      <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3" style={{ minHeight: 0 }}>
+      <div style={{ flex: 1, overflowY: 'auto', padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '10px', minHeight: 0 }}>
         {messages.length === 0 && (
-          <p className="text-sm text-center py-6" style={{ color: 'var(--text-muted)' }}>Ask anything about your finances.</p>
+          <p style={{ fontSize: '14px', color: 'var(--muted)', textAlign: 'center', padding: '24px 0' }}>Ask anything about your finances.</p>
         )}
         {messages.map((m, i) => (
-          <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div
-              className="max-w-[85%] rounded-2xl px-3 py-2 text-sm leading-relaxed"
-              style={m.role === 'user'
-                ? { background: 'var(--brand)', color: '#fff' }
-                : { background: 'var(--bg-surface-secondary)', color: 'var(--text-primary)' }}
-            >
+          <div key={i} style={{ display: 'flex', justifyContent: m.role === 'user' ? 'flex-end' : 'flex-start' }}>
+            <div style={{
+              maxWidth: '85%',
+              borderRadius: '8px',
+              padding: '8px 12px',
+              fontSize: '14px',
+              lineHeight: 1.5,
+              background: m.role === 'user' ? 'var(--brand)' : 'var(--surface-2)',
+              color: m.role === 'user' ? '#fff' : 'var(--ink)',
+            }}>
               {m.content}
             </div>
           </div>
         ))}
         {loading && (
-          <div className="flex justify-start">
-            <div className="rounded-2xl px-3 py-2 text-sm" style={{ background: 'var(--bg-surface-secondary)', color: 'var(--text-muted)' }}>
+          <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+            <div style={{ borderRadius: '8px', padding: '8px 12px', fontSize: '14px', background: 'var(--surface-2)', color: 'var(--muted)' }}>
               Thinking…
             </div>
           </div>
         )}
         <div ref={bottomRef} />
       </div>
-      <form onSubmit={handleSubmit} className="px-3 py-3 border-t flex gap-2" style={{ borderColor: 'var(--border)' }}>
+      <form onSubmit={handleSubmit} style={{ padding: '10px 12px', borderTop: '1px solid var(--border)', display: 'flex', gap: '8px' }}>
         <input
           type="text"
           value={input}
           onChange={e => setInput(e.target.value)}
           placeholder="Ask about your finances…"
-          className="flex-1 rounded-xl px-3 py-2 text-sm outline-none"
-          style={{ background: 'var(--bg-surface-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}
+          style={{
+            flex: 1, height: '36px', padding: '8px 12px',
+            background: 'var(--surface-2)', color: 'var(--ink)',
+            border: '1px solid var(--border)', borderRadius: '6px',
+            fontSize: '14px', outline: 'none',
+          }}
         />
         <button
           type="submit"
           disabled={!input.trim() || loading}
-          className="rounded-xl px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
-          style={{ background: 'var(--brand)' }}
+          style={{
+            height: '36px', padding: '0 16px',
+            background: 'var(--brand)', color: '#fff',
+            border: 'none', borderRadius: '6px',
+            fontSize: '14px', fontWeight: 500,
+            cursor: !input.trim() || loading ? 'not-allowed' : 'pointer',
+            opacity: !input.trim() || loading ? 0.4 : 1,
+          }}
         >
           Send
         </button>
@@ -295,25 +315,21 @@ function DecisionLabContent() {
   const [verdict, setVerdict] = useState<VerdictOutput | null>(null)
   const [loading, setLoading] = useState(true)
 
-  // Simulate
   const [scenarioInput, setScenarioInput] = useState('')
   const [simLoading, setSimLoading] = useState(false)
   const [simResult, setSimResult] = useState<SimulationResult | null>(null)
   const [simError, setSimError] = useState<string | null>(null)
   const [activeScenario, setActiveScenario] = useState<string | null>(null)
 
-  // Spend check
   const [spendModalOpen, setSpendModalOpen] = useState(false)
   const [spendLoading, setSpendLoading] = useState(false)
   const [spendResult, setSpendResult] = useState<SpendCheckResult | null>(null)
   const [spendError, setSpendError] = useState<string | null>(null)
 
-  // Credit cards
   const [ccLoading, setCcLoading] = useState(false)
   const [ccResult, setCcResult] = useState<CreditCard[] | null>(null)
   const [ccError, setCcError] = useState<string | null>(null)
 
-  // Chat
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
   const [chatLoading, setChatLoading] = useState(false)
 
@@ -419,7 +435,7 @@ function DecisionLabContent() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '80px 0' }}>
         <div className="w-6 h-6 rounded-full border-2 animate-spin" style={{ borderColor: 'var(--brand)', borderTopColor: 'transparent' }} />
       </div>
     )
@@ -427,10 +443,16 @@ function DecisionLabContent() {
 
   if (!twin || twin.monthly_income === 0) {
     return (
-      <div className="rounded-2xl border p-6 text-center" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}>
-        <p className="text-base font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>Complete onboarding first</p>
-        <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>The Decision Lab needs your income and goal data to run simulations.</p>
-        <a href="/onboarding/step-2" className="inline-block px-4 py-2 rounded-xl text-sm font-medium text-white" style={{ background: 'var(--brand)' }}>
+      <div style={{ ...card, textAlign: 'center', maxWidth: '400px' }}>
+        <p style={{ fontSize: '15px', fontWeight: 600, color: 'var(--ink)', marginBottom: '6px' }}>Complete onboarding first</p>
+        <p style={{ fontSize: '14px', color: 'var(--ink-2)', lineHeight: 1.6, marginBottom: '16px' }}>The Decision Lab needs your income and goal data to run simulations.</p>
+        <a href="/onboarding/step-2" style={{
+          display: 'inline-flex', alignItems: 'center',
+          height: '36px', padding: '0 16px',
+          background: 'var(--brand)', color: '#fff',
+          borderRadius: '6px', fontSize: '14px', fontWeight: 500,
+          textDecoration: 'none',
+        }}>
           Add money model →
         </a>
       </div>
@@ -447,10 +469,10 @@ function DecisionLabContent() {
         />
       )}
 
-      <div className="space-y-5">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
         <div>
-          <h1 className="text-2xl font-semibold" style={{ color: 'var(--text-primary)' }}>Decision Lab</h1>
-          <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>Simulate life decisions against your financial twin.</p>
+          <h1 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--ink)' }}>Decision Lab</h1>
+          <p style={{ fontSize: '14px', color: 'var(--ink-2)', marginTop: '4px', lineHeight: 1.6 }}>Simulate life decisions against your financial twin.</p>
         </div>
 
         <div className="lg:grid lg:grid-cols-[260px_1fr] lg:gap-5">
@@ -458,11 +480,11 @@ function DecisionLabContent() {
             <TwinSidebar twin={twin} verdict={verdict} />
           </div>
 
-          <div className="space-y-5">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {/* Chips + custom input */}
-            <div className="rounded-2xl border p-4" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}>
-              <p className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: 'var(--text-muted)' }}>Quick scenarios</p>
-              <div className="flex flex-wrap gap-2 mb-4">
+            <div style={card}>
+              <p style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--muted)', marginBottom: '10px' }}>Quick scenarios</p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '14px' }}>
                 {QUICK_CHIPS.map(chip => (
                   <button
                     key={chip.value}
@@ -473,8 +495,15 @@ function DecisionLabContent() {
                       else if (chip.type === 'spend') setSpendModalOpen(true)
                       else if (chip.type === 'cc') runCreditCards()
                     }}
-                    className="px-3 py-1.5 rounded-xl text-sm font-medium border transition-colors disabled:opacity-50"
-                    style={{ background: 'var(--bg-surface-secondary)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}
+                    style={{
+                      height: '36px', padding: '0 14px',
+                      background: 'var(--surface)', border: '1px solid var(--border-strong)',
+                      borderRadius: '6px', fontSize: '13px', fontWeight: 500,
+                      color: 'var(--ink)', cursor: anyLoading ? 'not-allowed' : 'pointer',
+                      opacity: anyLoading ? 0.5 : 1,
+                    }}
+                    onMouseEnter={e => { if (!anyLoading) e.currentTarget.style.background = 'var(--surface-2)' }}
+                    onMouseLeave={e => { if (!anyLoading) e.currentTarget.style.background = 'var(--surface)' }}
                   >
                     {chip.label}
                   </button>
@@ -483,41 +512,51 @@ function DecisionLabContent() {
 
               <form
                 onSubmit={e => { e.preventDefault(); const v = scenarioInput.trim(); if (v) { setScenarioInput(''); runSimulation(v) } }}
-                className="flex gap-2"
+                style={{ display: 'flex', gap: '8px' }}
               >
                 <input
                   type="text"
                   value={scenarioInput}
                   onChange={e => setScenarioInput(e.target.value)}
                   placeholder="Describe your scenario…"
-                  className="flex-1 rounded-xl px-3 py-2 text-sm outline-none"
-                  style={{ background: 'var(--bg-surface-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}
+                  style={{
+                    flex: 1, height: '36px', padding: '8px 12px',
+                    background: 'var(--surface-2)', color: 'var(--ink)',
+                    border: '1px solid var(--border)', borderRadius: '6px',
+                    fontSize: '14px', outline: 'none',
+                  }}
                 />
                 <button
                   type="submit"
                   disabled={!scenarioInput.trim() || anyLoading}
-                  className="rounded-xl px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
-                  style={{ background: 'var(--brand)' }}
+                  style={{
+                    height: '36px', padding: '0 16px',
+                    background: 'var(--brand)', color: '#fff',
+                    border: 'none', borderRadius: '6px',
+                    fontSize: '14px', fontWeight: 500,
+                    cursor: !scenarioInput.trim() || anyLoading ? 'not-allowed' : 'pointer',
+                    opacity: !scenarioInput.trim() || anyLoading ? 0.4 : 1,
+                  }}
                 >
                   Run
                 </button>
               </form>
             </div>
 
-            {/* Loading state */}
+            {/* Loading */}
             {anyLoading && (
-              <div className="rounded-2xl border p-6 flex items-center gap-3" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}>
+              <div style={{ ...card, display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <div className="w-5 h-5 rounded-full border-2 animate-spin shrink-0" style={{ borderColor: 'var(--brand)', borderTopColor: 'transparent' }} />
-                <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                <p style={{ fontSize: '14px', color: 'var(--ink-2)' }}>
                   {simLoading ? 'Simulating your scenario…' : spendLoading ? 'Checking your purchase…' : 'Finding best cards…'}
                 </p>
               </div>
             )}
 
-            {/* Error states */}
+            {/* Errors */}
             {(simError || spendError || ccError) && !anyLoading && (
-              <div className="rounded-2xl border p-4" style={{ background: 'var(--bg-surface)', borderColor: 'var(--risk-high)' }}>
-                <p className="text-sm" style={{ color: 'var(--risk-high)' }}>{simError ?? spendError ?? ccError}</p>
+              <div style={{ ...card, borderColor: '#D94F4F' }}>
+                <p style={{ fontSize: '14px', color: '#D94F4F' }}>{simError ?? spendError ?? ccError}</p>
               </div>
             )}
 
@@ -538,8 +577,8 @@ function DecisionLabContent() {
 export default function DecisionLabPage() {
   return (
     <Suspense fallback={
-      <div className="flex items-center justify-center py-20">
-        <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Loading…</p>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '80px 0' }}>
+        <p style={{ fontSize: '14px', color: 'var(--muted)' }}>Loading…</p>
       </div>
     }>
       <DecisionLabContent />

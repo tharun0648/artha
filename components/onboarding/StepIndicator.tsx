@@ -1,9 +1,7 @@
-import { Check } from 'lucide-react'
-
 const STEPS = [
   { label: 'Profile' },
   { label: 'Money Model' },
-  { label: 'Goal & Subscriptions' },
+  { label: 'Goal & Subs' },
 ]
 
 interface StepIndicatorProps {
@@ -12,48 +10,57 @@ interface StepIndicatorProps {
 
 export default function StepIndicator({ currentStep }: StepIndicatorProps) {
   return (
-    <div className="flex items-center gap-0 w-full max-w-sm mx-auto mb-8">
+    <div style={{ display: 'flex', alignItems: 'flex-start', width: '100%', maxWidth: '480px', margin: '0 auto 24px' }}>
       {STEPS.map((step, idx) => {
         const stepNum = idx + 1
         const isCompleted = stepNum < currentStep
         const isActive = stepNum === currentStep
+        const isLast = idx === STEPS.length - 1
 
         return (
-          <div key={step.label} className="flex items-center flex-1 last:flex-none">
-            <div className="flex flex-col items-center">
+          <div
+            key={step.label}
+            style={{ display: 'flex', alignItems: 'center', flex: isLast ? 0 : 1 }}
+          >
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
               <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-colors ${
-                  isCompleted
-                    ? 'text-white'
-                    : isActive
-                    ? 'text-white'
-                    : 'bg-gray-100 text-gray-400'
-                }`}
-                style={
-                  isCompleted
-                    ? { background: 'var(--brand)' }
-                    : isActive
-                    ? { background: 'var(--brand)', boxShadow: '0 0 0 4px var(--brand-soft)' }
-                    : undefined
-                }
+                style={{
+                  width: '24px',
+                  height: '24px',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  flexShrink: 0,
+                  background: isCompleted || isActive ? 'var(--brand)' : 'var(--surface)',
+                  border: isCompleted || isActive ? 'none' : '1px solid var(--border)',
+                  color: isCompleted || isActive ? '#fff' : 'var(--muted)',
+                  boxShadow: isActive ? '0 0 0 4px var(--brand-surface)' : 'none',
+                  transition: 'all 0.15s',
+                }}
               >
-                {isCompleted ? <Check size={14} strokeWidth={2.5} /> : stepNum}
+                {isCompleted ? '✓' : stepNum}
               </div>
-              <span
-                className={`text-xs mt-1 font-medium whitespace-nowrap ${
-                  isCompleted ? 'text-gray-600' : 'text-gray-400'
-                }`}
-                style={isActive ? { color: 'var(--brand)' } : undefined}
-              >
+              <span style={{
+                fontSize: '11px',
+                fontWeight: 500,
+                color: isActive ? 'var(--brand-text)' : 'var(--muted)',
+                whiteSpace: 'nowrap',
+              }}>
                 {step.label}
               </span>
             </div>
-            {idx < STEPS.length - 1 && (
+            {!isLast && (
               <div
-                className={`flex-1 h-0.5 mx-2 mb-4 transition-colors ${
-                  stepNum < currentStep ? '' : 'bg-gray-200'
-                }`}
-                style={stepNum < currentStep ? { background: 'var(--brand)' } : undefined}
+                style={{
+                  flex: 1,
+                  height: '1px',
+                  background: isCompleted ? 'var(--brand)' : 'var(--border)',
+                  margin: '0 8px',
+                  marginBottom: '18px',
+                }}
               />
             )}
           </div>

@@ -9,7 +9,6 @@ interface Props {
   onChange: (subs: SubscriptionRow[]) => void
 }
 
-// Pick the single primary plan for each service: lowest non-zero amount
 function primaryPlan(plans: { label: string; amount: number }[]): { label: string; amount: number } | null {
   const nonZero = plans.filter(p => p.amount > 0)
   if (!nonZero.length) return null
@@ -64,7 +63,7 @@ export default function SubscriptionPicker({ onChange }: Props) {
 
   return (
     <div>
-      <div className="space-y-1">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
         {SUBSCRIPTION_CATEGORIES.map(cat => {
           const isExpanded = expandedCategories.has(cat.key)
           const selectedCount = cat.services.filter(s => selected.has(s.id)).length
@@ -73,26 +72,34 @@ export default function SubscriptionPicker({ onChange }: Props) {
           if (!validServices.length) return null
 
           return (
-            <div key={cat.key} className="rounded-xl border overflow-hidden" style={{ borderColor: 'var(--border)' }}>
+            <div key={cat.key} style={{ border: '1px solid var(--border)', borderRadius: '6px', overflow: 'hidden' }}>
               <button
                 type="button"
                 onClick={() => toggleCategory(cat.key)}
-                className="w-full flex items-center justify-between px-4 py-3"
-                style={{ background: 'var(--bg-surface)' }}
+                style={{
+                  width: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '10px 14px',
+                  background: 'var(--surface)',
+                  border: 'none',
+                  cursor: 'pointer',
+                }}
               >
-                <span className="text-sm font-medium flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+                <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--ink)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                   {cat.label}
                   {selectedCount > 0 && (
-                    <span className="text-xs px-1.5 py-0.5 rounded-full" style={{ background: 'var(--brand-soft)', color: 'var(--brand)' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 500, color: 'var(--brand)', background: 'var(--brand-surface)', borderRadius: '4px', padding: '2px 6px' }}>
                       {selectedCount}
                     </span>
                   )}
                 </span>
-                <span style={{ color: 'var(--text-muted)', fontSize: '11px' }}>{isExpanded ? '▲' : '▶'}</span>
+                <span style={{ fontSize: '11px', color: 'var(--muted)' }}>{isExpanded ? '▲' : '▶'}</span>
               </button>
 
               {isExpanded && (
-                <div className="px-4 pb-4 pt-3 space-y-2" style={{ borderTop: '1px solid var(--border)', background: 'var(--bg-elevated)' }}>
+                <div style={{ padding: '10px 14px', paddingTop: '8px', borderTop: '1px solid var(--border)', background: 'var(--surface-2)', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   {validServices.map(svc => {
                     const plan = primaryPlan(svc.plans)!
                     const isSelected = selected.has(svc.id)
@@ -101,19 +108,25 @@ export default function SubscriptionPicker({ onChange }: Props) {
                         key={svc.id}
                         type="button"
                         onClick={() => toggleService(svc.id)}
-                        className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl border transition-colors text-left"
                         style={{
-                          borderColor: isSelected ? 'var(--brand)' : 'var(--border)',
-                          background: isSelected ? 'var(--brand-soft)' : 'var(--bg-surface)',
+                          width: '100%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '8px 12px',
+                          borderRadius: '6px',
+                          border: `1px solid ${isSelected ? 'var(--brand)' : 'var(--border)'}`,
+                          background: isSelected ? 'var(--brand-surface)' : 'var(--surface)',
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                          transition: 'all 0.1s',
                         }}
                       >
-                        <span className="text-sm font-medium" style={{ color: isSelected ? 'var(--brand)' : 'var(--text-primary)' }}>
-                          {isSelected && <span className="mr-1">✓</span>}
+                        <span style={{ fontSize: '14px', fontWeight: 500, color: isSelected ? 'var(--brand)' : 'var(--ink)' }}>
+                          {isSelected && <span style={{ marginRight: '4px' }}>✓</span>}
                           {svc.name}
                         </span>
-                        <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                          ₹{plan.amount}/mo
-                        </span>
+                        <span style={{ fontSize: '12px', color: 'var(--muted)' }}>₹{plan.amount}/mo</span>
                       </button>
                     )
                   })}
@@ -124,16 +137,16 @@ export default function SubscriptionPicker({ onChange }: Props) {
         })}
       </div>
 
-      <p className="text-xs mt-3" style={{ color: 'var(--text-muted)' }}>
+      <p style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '10px' }}>
         Showing primary plans — expanded plan list available post-launch.
       </p>
 
       {totalMonthly > 0 && (
-        <div className="rounded-xl p-4 mt-3" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}>
-          <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+        <div style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: '6px', padding: '12px 14px', marginTop: '10px' }}>
+          <p style={{ fontSize: '15px', fontWeight: 600, color: 'var(--ink)' }}>
             Total: ₹{totalMonthly.toLocaleString('en-IN')}/month
           </p>
-          <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+          <p style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '2px' }}>
             ₹{(totalMonthly * 12).toLocaleString('en-IN')}/year
             {' · '}₹{opportunityCost10yr.toLocaleString('en-IN')} in 10yr if invested
           </p>

@@ -55,30 +55,46 @@ export default function LoginPage() {
     }
   }
 
-  return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg-page)' }}
-         className="flex items-center justify-center px-4">
-      <div className="w-full max-w-sm">
+  const btnBase: React.CSSProperties = {
+    width: '100%',
+    height: '36px',
+    borderRadius: '6px',
+    fontSize: '14px',
+    fontWeight: 500,
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '8px',
+    transition: 'background 0.1s',
+  }
 
-        <div className="mb-10 text-center">
-          <h1 className="text-4xl font-semibold" style={{ color: 'var(--text-primary)' }}>
-            A₹tha
-          </h1>
-          <p className="mt-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
+  return (
+    <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
+      <div style={{ width: '360px' }}>
+
+        {/* Card */}
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '8px', padding: '32px' }}>
+
+          {/* Wordmark */}
+          <p style={{ textAlign: 'center', fontSize: '24px', fontWeight: 600, color: 'var(--ink)', marginBottom: '6px', fontFamily: 'Inter, system-ui, sans-serif' }}>
+            A<span style={{ color: 'var(--brand)' }}>₹</span>tha
+          </p>
+          <p style={{ textAlign: 'center', fontSize: '13px', color: 'var(--muted)', marginBottom: '28px' }}>
             Financial decisions. Better futures.
           </p>
-        </div>
 
-        <div className="rounded-2xl border p-8"
-             style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)', boxShadow: 'var(--shadow-md)' }}>
-          <p className="text-sm mb-6" style={{ color: 'var(--text-secondary)' }}>
-            Sign in to access your Financial Digital Twin.
-          </p>
-
+          {/* Google sign-in */}
           <button
             onClick={handleGoogleSignIn}
-            className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl border transition-colors hover:opacity-90"
-            style={{ borderColor: 'var(--border)', background: 'var(--bg-surface)', color: 'var(--text-primary)' }}
+            style={{
+              ...btnBase,
+              background: 'var(--surface)',
+              border: '1px solid var(--border-strong)',
+              color: 'var(--ink)',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-2)')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'var(--surface)')}
           >
             <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
               <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
@@ -89,49 +105,63 @@ export default function LoginPage() {
             Continue with Google
           </button>
 
-          {/* Demo divider */}
-          <div className="flex items-center gap-3 my-6">
-            <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
-            <span className="text-xs text-gray-400">or try a demo</span>
-            <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
+          {/* Divider */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', margin: '20px 0' }}>
+            <div style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
+            <span style={{ fontSize: '12px', color: 'var(--muted)' }}>or try a demo</span>
+            <div style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
           </div>
 
-          {/* Full demo button */}
-          <div className="mb-3">
+          {/* Full demo */}
+          <div style={{ marginBottom: '8px' }}>
             <button
               onClick={handleFullDemo}
               disabled={fullLoading || tempLoading}
-              className="w-full flex flex-col items-center justify-center gap-1 px-4 py-3 rounded-md transition-colors hover:opacity-90 disabled:opacity-60"
-              style={{ background: '#4F6F52', color: '#fff' }}
+              style={{
+                ...btnBase,
+                background: 'var(--brand)',
+                color: '#fff',
+                border: 'none',
+                opacity: fullLoading || tempLoading ? 0.6 : 1,
+              }}
+              onMouseEnter={e => { if (!(fullLoading || tempLoading)) e.currentTarget.style.background = 'var(--brand-hover)' }}
+              onMouseLeave={e => { if (!(fullLoading || tempLoading)) e.currentTarget.style.background = 'var(--brand)' }}
             >
-              <span className="flex items-center gap-2 text-sm font-medium">
-                {fullLoading && <Spinner />}
-                View full demo
-              </span>
-              <span className="text-xs opacity-70">Pre-filled account · instant dashboard</span>
+              {fullLoading && <Spinner />}
+              View full demo
             </button>
-            {fullError && <p className="text-red-500 text-sm mt-1">{fullError}</p>}
+            <p style={{ fontSize: '11px', color: 'var(--muted)', textAlign: 'center', marginTop: '6px' }}>
+              Pre-filled account · instant dashboard
+            </p>
+            {fullError && <p style={{ fontSize: '12px', color: '#D94F4F', textAlign: 'center', marginTop: '4px' }}>{fullError}</p>}
           </div>
 
-          {/* Temp session button */}
+          {/* Temp session */}
           <div>
             <button
               onClick={handleTempDemo}
               disabled={fullLoading || tempLoading}
-              className="w-full flex flex-col items-center justify-center gap-1 px-4 py-3 rounded-md border transition-colors hover:opacity-90 disabled:opacity-60 bg-transparent"
-              style={{ borderColor: '#4F6F52', color: '#4F6F52' }}
+              style={{
+                ...btnBase,
+                background: 'transparent',
+                border: '1px solid var(--border-strong)',
+                color: 'var(--ink)',
+                opacity: fullLoading || tempLoading ? 0.6 : 1,
+              }}
+              onMouseEnter={e => { if (!(fullLoading || tempLoading)) e.currentTarget.style.background = 'var(--surface-2)' }}
+              onMouseLeave={e => { if (!(fullLoading || tempLoading)) e.currentTarget.style.background = 'transparent' }}
             >
-              <span className="flex items-center gap-2 text-sm font-medium">
-                {tempLoading && <Spinner />}
-                Try it yourself
-              </span>
-              <span className="text-xs opacity-70">Temporary session · cleared when you close the browser</span>
+              {tempLoading && <Spinner />}
+              Try it yourself
             </button>
-            {tempError && <p className="text-red-500 text-sm mt-1">{tempError}</p>}
+            <p style={{ fontSize: '11px', color: 'var(--muted)', textAlign: 'center', marginTop: '6px' }}>
+              Temporary session · clears on close
+            </p>
+            {tempError && <p style={{ fontSize: '12px', color: '#D94F4F', textAlign: 'center', marginTop: '4px' }}>{tempError}</p>}
           </div>
 
-          <p className="text-xs text-center mt-6" style={{ color: 'var(--text-muted)' }}>
-            Your financial data is private and never shared.
+          <p style={{ fontSize: '11px', color: 'var(--muted)', textAlign: 'center', marginTop: '24px' }}>
+            Your data is private and never shared.
           </p>
         </div>
 

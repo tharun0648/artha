@@ -13,9 +13,9 @@ function fmt(n: number): string {
 }
 
 const TONE_STYLES = {
-  warning: { border: 'var(--risk-high)', label: 'Warning', labelColor: 'var(--risk-high)', bg: '#FDF2F0' },
-  caution: { border: 'var(--warning)', label: 'Caution', labelColor: 'var(--warning)', bg: '#FDF8EF' },
-  neutral: { border: 'var(--border)', label: 'Looks fine', labelColor: 'var(--success)', bg: 'var(--bg-surface)' },
+  warning: { borderColor: '#D94F4F', label: 'Warning', labelColor: '#D94F4F' },
+  caution: { borderColor: 'var(--accent)', label: 'Caution', labelColor: 'var(--accent)' },
+  neutral: { borderColor: 'var(--border)', label: 'Looks fine', labelColor: 'var(--brand)' },
 }
 
 const OPTION_LABELS: Record<string, string> = {
@@ -29,65 +29,63 @@ export default function SpendCheckCard({ result }: Props) {
 
   return (
     <div
-      className="rounded-2xl border p-5 space-y-4"
-      style={{ background: tone.bg, borderColor: tone.border, boxShadow: 'var(--shadow-md)' }}
+      style={{ background: 'var(--surface)', border: `1px solid ${tone.borderColor}`, borderRadius: '8px', padding: '20px' }}
     >
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+        <p style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--muted)' }}>
           Should you buy this?
         </p>
-        <span
-          className="text-xs font-semibold px-2 py-0.5 rounded-full"
-          style={{ color: tone.labelColor, background: 'rgba(255,255,255,0.7)' }}
-        >
+        <span style={{
+          fontSize: '11px',
+          fontWeight: 600,
+          color: tone.labelColor,
+          background: 'var(--surface-2)',
+          borderRadius: '4px',
+          padding: '2px 8px',
+        }}>
           {tone.label}
         </span>
       </div>
 
       {/* Key insight */}
-      <p className="text-base font-medium leading-snug" style={{ color: 'var(--text-primary)' }}>
+      <p style={{ fontSize: '15px', fontWeight: 600, color: 'var(--ink)', lineHeight: 1.4, marginBottom: '12px' }}>
         {result.one_insight}
       </p>
 
       {/* Summary + goal impact */}
-      <div className="space-y-1.5">
-        <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{result.purchase_summary}</p>
-        <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{result.goal_impact_statement}</p>
+      <div style={{ marginBottom: '16px' }}>
+        <p style={{ fontSize: '14px', color: 'var(--ink-2)', lineHeight: 1.6, marginBottom: '4px' }}>{result.purchase_summary}</p>
+        <p style={{ fontSize: '14px', color: 'var(--ink-2)', lineHeight: 1.6 }}>{result.goal_impact_statement}</p>
       </div>
 
       {/* Stats row */}
-      <div className="grid grid-cols-2 gap-3">
-        <div
-          className="rounded-xl p-3"
-          style={{ background: 'rgba(255,255,255,0.6)', border: '1px solid var(--border)' }}
-        >
-          <p className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>What this money could grow to in 10 years</p>
-          <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
-            {fmt(result.opportunity_cost_10yr)}
-          </p>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
+        <div style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: '6px', padding: '12px' }}>
+          <p style={{ fontSize: '12px', color: 'var(--muted)', marginBottom: '4px' }}>10-year opportunity cost</p>
+          <p style={{ fontSize: '15px', fontWeight: 600, color: 'var(--ink)' }}>{fmt(result.opportunity_cost_10yr)}</p>
         </div>
-        <div
-          className="rounded-xl p-3"
-          style={{ background: 'rgba(255,255,255,0.6)', border: '1px solid var(--border)' }}
-        >
-          <p className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>EMI health</p>
-          <p
-            className="text-sm font-semibold"
-            style={{ color: result.emi_ceiling_breach ? 'var(--risk-high)' : 'var(--success)' }}
-          >
-            {result.emi_ceiling_breach ? '⚠ Risky — pushes your EMIs too high' : 'Within limit'}
+        <div style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: '6px', padding: '12px' }}>
+          <p style={{ fontSize: '12px', color: 'var(--muted)', marginBottom: '4px' }}>EMI health</p>
+          <p style={{ fontSize: '15px', fontWeight: 600, color: result.emi_ceiling_breach ? '#D94F4F' : 'var(--brand)' }}>
+            {result.emi_ceiling_breach ? '⚠ Risky' : 'Within limit'}
           </p>
         </div>
       </div>
 
       {/* Options */}
-      <div className="flex gap-2 flex-wrap">
+      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
         {result.options.map(opt => (
           <span
             key={opt}
-            className="text-xs px-3 py-1.5 rounded-full border font-medium"
-            style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)', background: 'rgba(255,255,255,0.6)' }}
+            style={{
+              fontSize: '11px',
+              fontWeight: 500,
+              color: 'var(--ink-2)',
+              background: 'var(--surface-2)',
+              borderRadius: '4px',
+              padding: '2px 8px',
+            }}
           >
             {OPTION_LABELS[opt] ?? opt}
           </span>

@@ -40,20 +40,35 @@ function calculateRealisticYear(goalAmount: number, twinSurplus: number, twinSav
   return CURRENT_YEAR + 30
 }
 
-const labelStyle = {
-  fontSize: '13px',
+const labelStyle: React.CSSProperties = {
+  fontSize: '12px',
   fontWeight: 500,
-  color: 'var(--text-secondary)',
+  color: 'var(--muted)',
+  letterSpacing: '0.02em',
   marginBottom: '6px',
-} as const
+  display: 'block',
+}
 
-const sectionHeadStyle = {
+const sectionHeadStyle: React.CSSProperties = {
   fontSize: '11px',
   fontWeight: 600,
-  textTransform: 'uppercase' as const,
-  letterSpacing: '0.06em',
-  color: 'var(--text-muted)',
+  textTransform: 'uppercase',
+  letterSpacing: '0.08em',
+  color: 'var(--muted)',
   marginBottom: '12px',
+}
+
+const inputBase: React.CSSProperties = {
+  width: '100%',
+  height: '36px',
+  padding: '8px 12px',
+  borderRadius: '6px',
+  border: '1px solid var(--border)',
+  background: 'var(--surface)',
+  color: 'var(--ink)',
+  fontSize: '14px',
+  outline: 'none',
+  boxSizing: 'border-box',
 }
 
 export default function Step3Page() {
@@ -157,145 +172,160 @@ export default function Step3Page() {
   }
 
   return (
-    <div>
-      <StepIndicator currentStep={3} />
-      <div className="mb-6">
-        <h2 className="text-2xl font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>
-          Your Goal
-        </h2>
-        <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-          What&apos;s the one financial goal that matters most right now?
-        </p>
-      </div>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '40px 24px' }}>
+      <div style={{ width: '100%', maxWidth: '480px' }}>
+        <StepIndicator currentStep={3} />
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
-        {/* Goal card */}
-        <div className="rounded-2xl border p-5"
-             style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)', boxShadow: 'var(--shadow-md)' }}>
+          {/* Goal selection card */}
+          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '8px', padding: '32px' }}>
+            <h2 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--ink)', marginBottom: '6px' }}>Your Goal</h2>
+            <p style={{ fontSize: '14px', color: 'var(--ink-2)', lineHeight: 1.6, marginBottom: '24px' }}>
+              What&apos;s the one financial goal that matters most right now?
+            </p>
 
-          {/* 2×2 grid + 1 centered */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-3">
-            {GOAL_OPTIONS.slice(0, 4).map(opt => (
-              <button
-                key={opt.value}
-                type="button"
-                onClick={() => handleGoalSelect(opt.value)}
-                className="flex flex-col items-center gap-2 p-4 rounded-xl border transition-colors"
-                style={{
-                  borderColor: selectedGoal === opt.value ? 'var(--brand)' : errors.goal ? '#ef4444' : 'var(--border)',
-                  background: selectedGoal === opt.value ? 'var(--brand-soft)' : 'var(--bg-surface)',
-                }}
-              >
-                <span className="text-2xl">{opt.emoji}</span>
-                <span className="text-xs font-semibold"
-                      style={{ color: selectedGoal === opt.value ? 'var(--brand)' : 'var(--text-primary)' }}>
-                  {opt.label}
-                </span>
-              </button>
-            ))}
-            <button
-              type="button"
-              onClick={() => handleGoalSelect(GOAL_OPTIONS[4].value)}
-              className="flex flex-col items-center gap-2 p-4 rounded-xl border transition-colors"
-              style={{
-                borderColor: selectedGoal === GOAL_OPTIONS[4].value ? 'var(--brand)' : errors.goal ? '#ef4444' : 'var(--border)',
-                background: selectedGoal === GOAL_OPTIONS[4].value ? 'var(--brand-soft)' : 'var(--bg-surface)',
-              }}
-            >
-              <span className="text-2xl">{GOAL_OPTIONS[4].emoji}</span>
-              <span className="text-xs font-semibold"
-                    style={{ color: selectedGoal === GOAL_OPTIONS[4].value ? 'var(--brand)' : 'var(--text-primary)' }}>
-                {GOAL_OPTIONS[4].label}
-              </span>
-            </button>
-          </div>
-          {errors.goal && <p className="text-red-500 text-sm mb-3">{errors.goal}</p>}
-
-          {/* Target amount */}
-          <div className="mt-5">
-            <p style={{ ...labelStyle, display: 'block' }}>Target amount</p>
-            <div className="flex gap-2 overflow-x-auto pb-1" style={{ WebkitOverflowScrolling: 'touch' }}>
-              {AMOUNT_CHIPS.map(chip => (
+            {/* Goal grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '4px' }}>
+              {GOAL_OPTIONS.slice(0, 4).map(opt => (
                 <button
-                  key={chip.label}
+                  key={opt.value}
                   type="button"
-                  onClick={() => handleAmountChange(chip.value)}
-                  className="flex-shrink-0 px-3 py-1.5 rounded-full text-sm font-medium transition-colors"
+                  onClick={() => handleGoalSelect(opt.value)}
                   style={{
-                    background: targetAmount === chip.value ? 'var(--brand)' : 'var(--bg-surface-secondary)',
-                    color: targetAmount === chip.value ? '#fff' : 'var(--text-secondary)',
-                    border: `1px solid ${targetAmount === chip.value ? 'var(--brand)' : 'var(--border)'}`,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '16px',
+                    borderRadius: '6px',
+                    border: `1px solid ${selectedGoal === opt.value ? 'var(--brand)' : errors.goal ? '#D94F4F' : 'var(--border)'}`,
+                    background: selectedGoal === opt.value ? 'var(--brand-surface)' : 'var(--surface)',
+                    cursor: 'pointer',
+                    transition: 'all 0.1s',
                   }}
                 >
-                  {chip.label}
+                  <span style={{ fontSize: '20px' }}>{opt.emoji}</span>
+                  <span style={{ fontSize: '13px', fontWeight: 600, color: selectedGoal === opt.value ? 'var(--brand)' : 'var(--ink)' }}>
+                    {opt.label}
+                  </span>
                 </button>
               ))}
+              <button
+                type="button"
+                onClick={() => handleGoalSelect(GOAL_OPTIONS[4].value)}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '16px',
+                  borderRadius: '6px',
+                  border: `1px solid ${selectedGoal === GOAL_OPTIONS[4].value ? 'var(--brand)' : errors.goal ? '#D94F4F' : 'var(--border)'}`,
+                  background: selectedGoal === GOAL_OPTIONS[4].value ? 'var(--brand-surface)' : 'var(--surface)',
+                  cursor: 'pointer',
+                  transition: 'all 0.1s',
+                }}
+              >
+                <span style={{ fontSize: '20px' }}>{GOAL_OPTIONS[4].emoji}</span>
+                <span style={{ fontSize: '13px', fontWeight: 600, color: selectedGoal === GOAL_OPTIONS[4].value ? 'var(--brand)' : 'var(--ink)' }}>
+                  {GOAL_OPTIONS[4].label}
+                </span>
+              </button>
             </div>
-            <div className="relative mt-3">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm select-none"
-                    style={{ color: 'var(--text-muted)' }}>₹</span>
+            {errors.goal && <p style={{ fontSize: '12px', color: '#D94F4F', marginTop: '4px', marginBottom: '8px' }}>{errors.goal}</p>}
+
+            {/* Target amount */}
+            <div style={{ marginTop: '20px' }}>
+              <p style={labelStyle}>Target amount</p>
+              <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '4px', marginBottom: '10px' }}>
+                {AMOUNT_CHIPS.map(chip => (
+                  <button
+                    key={chip.label}
+                    type="button"
+                    onClick={() => handleAmountChange(chip.value)}
+                    style={{
+                      flexShrink: 0,
+                      padding: '6px 12px',
+                      borderRadius: '6px',
+                      fontSize: '13px',
+                      fontWeight: 500,
+                      cursor: 'pointer',
+                      border: `1px solid ${targetAmount === chip.value ? 'var(--brand)' : 'var(--border)'}`,
+                      background: targetAmount === chip.value ? 'var(--brand-surface)' : 'var(--surface)',
+                      color: targetAmount === chip.value ? 'var(--brand)' : 'var(--ink-2)',
+                      transition: 'all 0.1s',
+                    }}
+                  >
+                    {chip.label}
+                  </button>
+                ))}
+              </div>
+              <div style={{ position: 'relative' }}>
+                <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', fontSize: '14px', color: 'var(--muted)', userSelect: 'none' }}>₹</span>
+                <input
+                  type="number"
+                  min={1}
+                  value={targetAmount === 0 ? '' : targetAmount}
+                  onChange={e => handleAmountChange(e.target.value === '' ? 0 : Number(e.target.value))}
+                  placeholder="Custom amount"
+                  style={{ ...inputBase, paddingLeft: '26px', borderColor: errors.amount ? '#D94F4F' : 'var(--border)' }}
+                />
+              </div>
+              {errors.amount && <p style={{ fontSize: '12px', color: '#D94F4F', marginTop: '4px' }}>{errors.amount}</p>}
+            </div>
+
+            {/* Target year */}
+            <div style={{ marginTop: '16px' }}>
+              {realisticYear && targetAmount > 0 && (
+                <p style={{ fontSize: '12px', color: 'var(--muted)', marginBottom: '6px' }}>
+                  Realistic by: <strong style={{ color: 'var(--brand)' }}>{realisticYear}</strong> · Adjust if needed
+                </p>
+              )}
+              <label style={labelStyle}>Target year</label>
               <input
                 type="number"
-                min={1}
-                value={targetAmount === 0 ? '' : targetAmount}
-                onChange={e => handleAmountChange(e.target.value === '' ? 0 : Number(e.target.value))}
-                placeholder="Custom amount"
-                className="w-full rounded-xl border"
-                style={{
-                  paddingLeft: '28px', paddingRight: '12px', paddingTop: '10px', paddingBottom: '10px',
-                  borderColor: errors.amount ? '#ef4444' : 'var(--border)', background: 'var(--bg-surface)',
-                  color: 'var(--text-primary)', fontSize: '14px', outline: 'none',
-                }}
+                min={CURRENT_YEAR + 1}
+                max={CURRENT_YEAR + 30}
+                value={targetYear}
+                onChange={e => setTargetYear(Number(e.target.value))}
+                style={inputBase}
               />
             </div>
-            {errors.amount && <p className="text-red-500 text-sm mt-1">{errors.amount}</p>}
           </div>
 
-          {/* Target year */}
-          <div className="mt-4">
-            {realisticYear && targetAmount > 0 && (
-              <p className="text-xs mb-2" style={{ color: 'var(--text-muted)' }}>
-                Realistic by: <strong style={{ color: 'var(--brand)' }}>{realisticYear}</strong> · Adjust if needed
-              </p>
-            )}
-            <p style={{ ...labelStyle, display: 'block' }}>Target year</p>
-            <input
-              type="number"
-              min={CURRENT_YEAR + 1}
-              max={CURRENT_YEAR + 30}
-              value={targetYear}
-              onChange={e => setTargetYear(Number(e.target.value))}
-              className="w-full rounded-xl border"
-              style={{
-                padding: '10px 12px', borderColor: 'var(--border)', background: 'var(--bg-surface)',
-                color: 'var(--text-primary)', fontSize: '14px', outline: 'none',
-              }}
-            />
+          {/* Subscriptions card */}
+          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '8px', padding: '32px' }}>
+            <p style={sectionHeadStyle}>Subscriptions</p>
+            <p style={{ fontSize: '14px', color: 'var(--ink-2)', lineHeight: 1.6, marginBottom: '16px' }}>
+              Select what you&apos;re subscribed to — pick the plan you&apos;re on.
+            </p>
+            <SubscriptionPicker onChange={handleSubsChange} />
           </div>
-        </div>
 
-        {/* Subscriptions card */}
-        <div className="rounded-2xl border p-5"
-             style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)', boxShadow: 'var(--shadow-md)' }}>
-          <p style={sectionHeadStyle}>Subscriptions</p>
-          <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>
-            Select what you&apos;re subscribed to — pick the plan you&apos;re on.
-          </p>
-          <SubscriptionPicker onChange={handleSubsChange} />
-        </div>
-
-        <button
-          type="submit"
-          disabled={loading || !isFormValid}
-          className="w-full text-white font-semibold transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-          style={{ background: 'var(--brand)', height: '52px', borderRadius: '12px' }}
-          onMouseOver={e => !(loading || !isFormValid) && ((e.target as HTMLElement).style.background = 'var(--brand-hover)')}
-          onMouseOut={e => !(loading || !isFormValid) && ((e.target as HTMLElement).style.background = 'var(--brand)')}
-        >
-          {loading ? 'Building your twin…' : 'Build My Financial Twin →'}
-        </button>
-      </form>
+          <button
+            type="submit"
+            disabled={loading || !isFormValid}
+            style={{
+              width: '100%',
+              height: '36px',
+              background: 'var(--brand)',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '6px',
+              fontSize: '14px',
+              fontWeight: 500,
+              cursor: loading || !isFormValid ? 'not-allowed' : 'pointer',
+              opacity: loading || !isFormValid ? 0.6 : 1,
+              transition: 'background 0.1s',
+            }}
+            onMouseEnter={e => { if (!(loading || !isFormValid)) e.currentTarget.style.background = 'var(--brand-hover)' }}
+            onMouseLeave={e => { if (!(loading || !isFormValid)) e.currentTarget.style.background = 'var(--brand)' }}
+          >
+            {loading ? 'Building your twin…' : 'Build My Financial Twin →'}
+          </button>
+        </form>
+      </div>
     </div>
   )
 }

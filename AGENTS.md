@@ -51,10 +51,58 @@ Session updates go to `SNAPSHOT.md`. This file holds unchanging contracts.
 ---
 
 ## UI Contracts
-- **Theme:** Light only (Ivory/sage palette). All colors via CSS variables (`var(--bg-page)`, `var(--brand)`, etc.) — never hardcoded hex or Tailwind dark values.
-- **StepIndicator:** Uses `var(--brand)` for active/completed steps. No hardcoded dark colors.
-- **Nav:** `components/nav/UserMenu.tsx` (client) handles avatar button + dropdown (My profile → `/settings`, Sign out). Passed `email` prop from server layout. Clicking outside closes it.
-- **Validation pattern (onboarding forms):** Validate on submit attempt. After first failed attempt, re-validate on each field change so errors clear as user fixes them. Submit button disabled while `!isFormValid || loading`. Errors shown inline below fields as `text-red-500 text-sm`, not a banner.
+
+### Theme
+- Light only. Page background: `var(--bg)`. No white full-bleed pages, no dark panels.
+- All colors via CSS custom properties — never hardcoded hex or Tailwind dark values.
+- See `SNAPSHOT.md` for the full token set and type scale.
+
+### Card System
+- **Card:** `background: var(--surface)`, `border: 1px solid var(--border)`, `border-radius: 8px`. No `box-shadow`.
+- **Nested surface / input bg:** `background: var(--surface-2)`, `border: 1px solid var(--border)`, `border-radius: 6px`.
+- **Dividers:** `1px solid var(--border)`. No colored rules, no heavy separators.
+
+### CSS Variable Names (use these — not legacy aliases)
+- Backgrounds: `var(--bg)`, `var(--surface)`, `var(--surface-2)`
+- Borders: `var(--border)`, `var(--border-strong)`
+- Text: `var(--ink)`, `var(--ink-2)`, `var(--muted)`
+- Brand: `var(--brand)`, `var(--brand-hover)`, `var(--brand-surface)`, `var(--brand-text)`
+- Accent: `var(--accent)`, `var(--accent-surface)`
+- Legacy aliases (`--bg-page`, `--bg-surface`, `--text-primary`, etc.) exist for backwards compat but do not use in new code.
+
+### Controls
+- **Primary button:** `bg var(--brand)`, white text, `border: none`, `border-radius: 6px`, `height: 36px`, `font-size: 14px`, `font-weight: 500`. Hover: `var(--brand-hover)`.
+- **Secondary button:** transparent, `border: 1px solid var(--border-strong)`, `color: var(--ink)`. Same sizing.
+- **Ghost button:** no border, no bg, `color: var(--ink-2)`, `font-size: 13px`, `font-weight: 500`. Hover: `color: var(--ink)`.
+- **Input/select:** `bg var(--surface)`, `border: 1px solid var(--border)`, `border-radius: 6px`, `height: 36px`, `font-size: 14px`. Focus via global CSS rule (border brand + 3px ring brand-surface).
+- **Persona/chip buttons:** surface + border. Selected: `border-color var(--brand)`, `bg var(--brand-surface)`, `color var(--brand)`.
+- **Pills/badges:** `bg var(--surface-2)`, `border-radius: 4px`, `font-size: 11px`, `font-weight: 500`.
+
+### Logo Component
+- Import from `@/components/logo`. Props: `size?: number` (default 28), `href?: string | null` (default `/dashboard`).
+- Nav: `<Logo size={24} />`. Login: inline text wordmark only (24px, Inter 600).
+- Vital Ring SVG mark is defined in `components/logo.tsx` — do not inline it elsewhere.
+- Favicon: `public/favicon.svg`.
+
+### Dashboard Layout (State C)
+- Two-column CSS grid: `lg:grid-cols-[65%_35%]`, column gap 20px, max-width 1080px.
+- Left column: Twin card (eyebrow + 40px probability hero + verdict + divider + causal bars inline) + subscription insight card.
+- Right column: `HealthScoreRing` (bar rows only, no SVG donut) + Snapshot card (6-stat 2-col grid) + brand CTA button.
+
+### StepIndicator
+- Circles: 24px diameter. Completed: brand fill, white ✓. Active: brand fill, white number, `box-shadow: 0 0 0 4px var(--brand-surface)`. Inactive: surface bg, 1px border, muted number.
+- Connector: 1px line. Completed segment: `var(--brand)`. Pending: `var(--border)`.
+- Labels: 11px, muted. Active: `var(--brand-text)`.
+
+### Nav
+- `components/nav/UserMenu.tsx` (client) handles avatar button + dropdown (My profile → `/settings`, Sign out).
+- Dropdown: `var(--surface)`, `1px solid var(--border)`, `8px` radius. No Tailwind gray classes.
+- Passed `email` prop from server layout. Clicking outside closes it.
+
+### Validation pattern (onboarding forms)
+- Validate on submit attempt. After first failed attempt, re-validate on each field change.
+- Submit button disabled while `!isFormValid || loading`.
+- Errors: `12px #D94F4F` below the field. No red border on the input itself.
 
 ## Demo System
 - `DEMO_USER_EMAIL` / `DEMO_USER_PASSWORD` / `DEMO_USER_ID` in env.
