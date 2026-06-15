@@ -4,6 +4,7 @@ Live technical state and pending tasks.
 
 ## Stack Primitives
 - Next.js 16.2.9 (App Router, Turbopack) | React 19 | TS 5 | Tailwind v4
+- Project Structure: Standard `src/` directory layout (`src/app`, `src/components`, `src/lib`, `src/types`)
 - DB: Supabase (`@supabase/ssr` ^0.12)
 - LLM: Groq SDK (`llama-3.3-70b-versatile`) | `analyze-twin`, `simulate`, `spend-check`, `chat`
 - UI: Light theme only. Inter 400/500/600/700. Canvas: `max-w-[1080px] mx-auto px-6`. No chart/form libs.
@@ -12,7 +13,7 @@ Live technical state and pending tasks.
 
 ## Design System
 
-### CSS Custom Properties (`app/globals.css`)
+### CSS Custom Properties (`src/app/globals.css`)
 **Surfaces:** `--bg` (page), `--surface` (card), `--surface-2` (nested/input bg)
 **Borders:** `--border` (default), `--border-strong` (buttons, focused elements)
 **Text:** `--ink` (primary), `--ink-2` (body/secondary), `--muted` (labels, captions)
@@ -48,7 +49,7 @@ Legacy aliases (`--bg-page`, `--bg-surface`, `--text-primary`, etc.) remain in `
 - **Pills/badges:** `var(--surface-2)`, `4px` radius, `11px/500`.
 
 ### Logo
-- `components/logo.tsx` — Vital Ring SVG mark + Inter 600 wordmark. Props: `size` (default 28), `href` (default `/dashboard`, pass `null` to render without link).
+- `src/components/logo.tsx` — Vital Ring SVG mark + Inter 600 wordmark. Props: `size` (default 28), `href` (default `/dashboard`, pass `null` to render without link).
 - `public/favicon.svg` — ring mark on brand-green square bg.
 - Nav uses `<Logo size={24} />`. Login page uses inline text wordmark (24px).
 
@@ -92,12 +93,12 @@ Client page + Twin Sidebar + 5 Native Action Chips:
 ## Strict Implementation Maps
 
 ### 1. File Responsibilities
-- `lib/financial-math.ts`: Core financial math functions. Math First, AI Last rule source.
-- `lib/credit-card-match.ts`: Named export `matchCreditCards`. Scores cards based on income limits, lounge access, sub categories, and spend fields.
-- `lib/subscriptions-data.ts`: 5 categories, 11 services (entertainment, music, food, productivity, telecom).
-- `lib/prompts.ts`: `VERDICT_SYSTEM_PROMPT`, `SIMULATE_SYSTEM_PROMPT`, `SPEND_CHECK_SYSTEM_PROMPT`.
+- `src/lib/financial-math.ts`: Core financial math functions. Math First, AI Last rule source.
+- `src/lib/credit-card-match.ts`: Named export `matchCreditCards`. Scores cards based on income limits, lounge access, sub categories, and spend fields.
+- `src/lib/subscriptions-data.ts`: 5 categories, 11 services (entertainment, music, food, productivity, telecom).
+- `src/lib/prompts.ts`: `VERDICT_SYSTEM_PROMPT`, `SIMULATE_SYSTEM_PROMPT`, `SPEND_CHECK_SYSTEM_PROMPT`.
 - `proxy.ts`: Direct route protection & token refresh proxy. No edge `middleware.ts`.
-- `components/logo.tsx`: Vital Ring mark + wordmark lockup. Used in nav and can be used anywhere.
+- `src/components/logo.tsx`: Vital Ring mark + wordmark lockup. Used in nav and can be used anywhere.
 
 ### 2. Math Lock Rules
 - `opportunity_cost_10yr` in spend-check = `Math.round(amount * Math.pow(1.12, 10)) - amount` (lump-sum, not SIP).

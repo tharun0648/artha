@@ -5,13 +5,13 @@ Session updates go to `SNAPSHOT.md`. This file holds unchanging contracts.
 
 ## Rules — Read Before Touch
 
-1. **Math first, AI last.** Calculations inside `lib/financial-math.ts` use Supabase data. Groq reason over pre-calculated numbers. Groq never do finance math.
+1. **Math first, AI last.** Calculations inside `src/lib/financial-math.ts` use Supabase data. Groq reason over pre-calculated numbers. Groq never do finance math.
    - `causal_attribution` percent from `causalAttribution()`, not Groq.
    - `subscription_insight` amount from math, not Groq.
 
 2. **Two clients — never mix.**
-   - `lib/supabase/client.ts` — browser only (`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`).
-   - `lib/supabase/server.ts` — server components/API routes (`cookies()` + `@supabase/ssr`).
+   - `src/lib/supabase/client.ts` — browser only (`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`).
+   - `src/lib/supabase/server.ts` — server components/API routes (`cookies()` + `@supabase/ssr`).
    - Never mix imports. Server client use publishable key (RLS apply via session).
 
 3. **Groq key server only.** `GROQ_API_KEY` no prefix. API routes only, no UI components.
@@ -22,7 +22,7 @@ Session updates go to `SNAPSHOT.md`. This file holds unchanging contracts.
 
 6. **Groq JSON mode.** `analyze-twin`, `simulate`, `spend-check` use `response_format: { type: 'json_object' }`, temp 0.3. `chat` use text mode, temp 0.4, max_tokens 400. Validate JSON before return.
 
-7. **Field names (`types/twin.ts`).** No legacy aliases:
+7. **Field names (`src/types/twin.ts`).** No legacy aliases:
    - Use `monthly_other`, `monthly_transport`, `monthly_entertainment` (Not `monthly_misc`).
    - Use `total_monthly_emi` (Not `monthly_emi`).
    - Use `current_savings` (Not `savings`).
@@ -81,7 +81,7 @@ Session updates go to `SNAPSHOT.md`. This file holds unchanging contracts.
 ### Logo Component
 - Import from `@/components/logo`. Props: `size?: number` (default 28), `href?: string | null` (default `/dashboard`).
 - Nav: `<Logo size={24} />`. Login: inline text wordmark only (24px, Inter 600).
-- Vital Ring SVG mark is defined in `components/logo.tsx` — do not inline it elsewhere.
+- Vital Ring SVG mark is defined in `src/components/logo.tsx` — do not inline it elsewhere.
 - Favicon: `public/favicon.svg`.
 
 ### Dashboard Layout (State C)
@@ -95,7 +95,7 @@ Session updates go to `SNAPSHOT.md`. This file holds unchanging contracts.
 - Labels: 11px, muted. Active: `var(--brand-text)`.
 
 ### Nav
-- `components/nav/UserMenu.tsx` (client) handles avatar button + dropdown (My profile → `/settings`, Sign out).
+- `src/components/nav/UserMenu.tsx` (client) handles avatar button + dropdown (My profile → `/settings`, Sign out).
 - Dropdown: `var(--surface)`, `1px solid var(--border)`, `8px` radius. No Tailwind gray classes.
 - Passed `email` prop from server layout. Clicking outside closes it.
 

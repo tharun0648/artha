@@ -6,5 +6,5 @@
     "noEmit": false,
     "outDir": ".ts-scripts-out"
   },
-  "include": ["scripts/**/*.ts", "lib/**/*.ts", "types/**/*.ts"]
+  "include": ["scripts/**/*.ts", "src/lib/**/*.ts", "src/types/**/*.ts"]
 }

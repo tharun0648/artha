@@ -58,6 +58,7 @@ Both options are on the login page — no Google sign-in required to explore.
 ## Stack
 
 - **Next.js 16** (App Router, Turbopack) + React 19 + TypeScript 5
+- **Project Structure:** Standard `src/` directory with App Router, components, lib, and types
 - **Supabase** — auth, Postgres, RLS
 - **Groq** (Llama 3.3 70B) — narrative generation only, never financial math
 - **Tailwind v4** + CSS custom properties design system (Inter, light theme)
