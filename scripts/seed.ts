@@ -244,7 +244,7 @@ async function seedDemoUser() {
     .from('profiles')
     .upsert({
       id: demoUserId,
-      age: 25,
+      age: 28,
       city: 'Bengaluru',
       company_type: 'startup',
       risk_appetite: 'moderate',
@@ -256,23 +256,31 @@ async function seedDemoUser() {
     .from('financial_twin')
     .upsert({
       user_id: demoUserId,
-      monthly_income: 85000,
-      monthly_rent: 22000,
-      monthly_food: 8000,
-      monthly_other: 6000,
-      monthly_transport: 3000,
-      monthly_entertainment: 2000,
-      total_monthly_emi: 0,
-      current_savings: 180000,
-      equity_investments: 50000,
-      epf_balance: 40000,
+      monthly_income: 140000,
+      last_year_income: 120000,
+      monthly_rent: 28000,
+      monthly_food: 12000,
+      monthly_other: 8000,
+      monthly_transport: 5000,
+      monthly_entertainment: 4000,
+      total_monthly_emi: 15000,
+      current_savings: 450000,
+      equity_investments: 200000,
+      epf_balance: 180000,
       primary_goal: 'home',
-      goal_target_amount: 5000000,
-      goal_target_year: 2032,
+      goal_target_amount: 16000000,
+      goal_target_year: 2034,
     }, { onConflict: 'user_id' })
   if (twinError) throw twinError
 
-  // Step 4: Replace subscriptions
+  // Step 4: Delete stale analysis cache so fresh analysis runs on next load
+  const { error: analysisDeleteError } = await supabase
+    .from('twin_analyses')
+    .delete()
+    .eq('user_id', demoUserId)
+  if (analysisDeleteError) throw analysisDeleteError
+
+  // Step 5: Replace subscriptions
   const { error: deleteError } = await supabase
     .from('subscriptions')
     .delete()
@@ -282,13 +290,15 @@ async function seedDemoUser() {
   const { error: subError } = await supabase
     .from('subscriptions')
     .insert([
-      { user_id: demoUserId, name: 'Netflix',     category: 'entertainment', monthly_amount: 649 },
-      { user_id: demoUserId, name: 'Spotify',     category: 'music_audio',   monthly_amount: 119 },
-      { user_id: demoUserId, name: 'Swiggy One',  category: 'food_dining',   monthly_amount: 299 },
+      { user_id: demoUserId, name: 'Netflix',       category: 'entertainment',        monthly_amount: 649  },
+      { user_id: demoUserId, name: 'Spotify',        category: 'music_audio',          monthly_amount: 119  },
+      { user_id: demoUserId, name: 'Amazon Prime',   category: 'ecommerce',            monthly_amount: 299  },
+      { user_id: demoUserId, name: 'Cult.fit',       category: 'fitness_health',       monthly_amount: 1299 },
+      { user_id: demoUserId, name: 'Zomato Gold',    category: 'food_dining',          monthly_amount: 149  },
     ])
   if (subError) throw subError
 
-  // Step 5: Done
+  // Step 6: Done
   console.log(`Demo user ready. UUID: ${demoUserId}`)
 }
 

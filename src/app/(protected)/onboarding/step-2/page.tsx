@@ -3,6 +3,7 @@
 import { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { fmt } from '@/lib/format'
 import StepIndicator from '@/components/onboarding/StepIndicator'
 
 const labelStyle: React.CSSProperties = {
@@ -53,21 +54,9 @@ function RupeeInput({
   onChange: (v: number) => void
   error?: string
 }) {
+  const placeholderText = [label, sublabel ? `— ${sublabel}` : '', optional ? '(optional)' : ''].filter(Boolean).join(' ')
   return (
     <div>
-      <label style={labelStyle} htmlFor={id}>
-        {label}
-        {sublabel && (
-          <span style={{ color: 'var(--muted)', fontWeight: 400, marginLeft: '4px' }}>
-            — {sublabel}
-          </span>
-        )}
-        {optional && (
-          <span style={{ color: 'var(--muted)', fontWeight: 400, marginLeft: '4px' }}>
-            (optional)
-          </span>
-        )}
-      </label>
       <div style={{ position: 'relative' }}>
         <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', fontSize: '14px', color: 'var(--muted)', userSelect: 'none' }}>₹</span>
         <input
@@ -76,11 +65,11 @@ function RupeeInput({
           min={0}
           value={value === 0 ? '' : value}
           onChange={e => onChange(e.target.value === '' ? 0 : Number(e.target.value))}
-          placeholder="0"
-          style={{ ...inputBase, paddingLeft: '26px', borderColor: error ? '#D94F4F' : 'var(--border)' }}
+          placeholder={placeholderText}
+          style={{ ...inputBase, paddingLeft: '26px', borderColor: error ? 'var(--negative)' : 'var(--border)' }}
         />
       </div>
-      {error && <p style={{ fontSize: '12px', color: '#D94F4F', marginTop: '4px' }}>{error}</p>}
+      {error && <p style={{ fontSize: '12px', color: 'var(--negative)', marginTop: '4px' }}>{error}</p>}
     </div>
   )
 }
@@ -128,17 +117,17 @@ export default function Step2Page() {
   const PERSONAS = {
     graduate: {
       label: 'Fresh Graduate 🎓',
-      description: 'Early career, building first financial habits.',
+      sublabel: '₹30–50k income, building first habits',
       values: { income: 45000, lastYear: 35000, rent: 12000, food: 6000, other: 8500, emi: 0, savings: 50000, equity: 0, epf: 0 },
     },
     midcareer: {
       label: 'Mid-career 💼',
-      description: 'Stable income, some EMIs, building wealth.',
+      sublabel: '₹60–120k income, managing EMIs and savings',
       values: { income: 85000, lastYear: 70000, rent: 22000, food: 8000, other: 11000, emi: 15000, savings: 300000, equity: 150000, epf: 80000 },
     },
     senior: {
       label: 'Senior 🏠',
-      description: 'High income, significant EMIs, large asset base.',
+      sublabel: '₹1.5L+ income, optimising for goals',
       values: { income: 150000, lastYear: 130000, rent: 35000, food: 12000, other: 19000, emi: 45000, savings: 800000, equity: 500000, epf: 300000 },
     },
   } as const
@@ -226,12 +215,12 @@ export default function Step2Page() {
       return
     }
 
-    router.push('/dashboard')
+    router.push('/onboarding/step-3')
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '40px 24px' }}>
-      <div style={{ width: '100%', maxWidth: '480px' }}>
+    <div className="page-wrap page-content">
+      <div style={{ maxWidth: '560px', margin: '0 auto' }}>
         <StepIndicator currentStep={2} />
 
         {/* Persona quick-fill */}
@@ -247,7 +236,7 @@ export default function Step2Page() {
                 onClick={() => applyPersona(key)}
                 style={{
                   flex: 1,
-                  padding: '6px 12px',
+                  padding: '12px 16px',
                   borderRadius: '6px',
                   fontSize: '13px',
                   fontWeight: 500,
@@ -259,15 +248,11 @@ export default function Step2Page() {
                   textAlign: 'left',
                 }}
               >
-                {PERSONAS[key].label}
+                <div>{PERSONAS[key].label}</div>
+                <div style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '2px' }}>{PERSONAS[key].sublabel}</div>
               </button>
             ))}
           </div>
-          {selectedPersona && (
-            <p style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '8px' }}>
-              {PERSONAS[selectedPersona].description}
-            </p>
-          )}
         </div>
 
         {/* Form card */}
@@ -288,19 +273,13 @@ export default function Step2Page() {
               </div>
             </section>
 
-            {/* Outgoings */}
+            {/* Monthly expenses */}
             <section>
-              <p style={sectionHeadStyle}>Monthly Outgoings</p>
+              <p style={sectionHeadStyle}>Monthly expenses</p>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <RupeeInput id="rent" label="Rent & housing" value={rent} onChange={makeHandler(setRent, 'rent')} error={errors.rent} />
                 <RupeeInput id="food" label="Food & groceries" value={food} onChange={makeHandler(setFood, 'food')} error={errors.food} />
                 <div>
-                  <label style={labelStyle} htmlFor="other">
-                    Everything else
-                    <span style={{ color: 'var(--muted)', fontWeight: 400, display: 'block', fontSize: '11px' }}>
-                      transport, entertainment, other
-                    </span>
-                  </label>
                   <div style={{ position: 'relative' }}>
                     <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', fontSize: '14px', color: 'var(--muted)', userSelect: 'none' }}>₹</span>
                     <input
@@ -309,11 +288,11 @@ export default function Step2Page() {
                       min={0}
                       value={other === 0 ? '' : other}
                       onChange={e => makeHandler(setOther, 'other')(e.target.value === '' ? 0 : Number(e.target.value))}
-                      placeholder="0"
-                      style={{ ...inputBase, paddingLeft: '26px', borderColor: errors.other ? '#D94F4F' : 'var(--border)' }}
+                      placeholder="Everything else"
+                      style={{ ...inputBase, paddingLeft: '26px', borderColor: errors.other ? 'var(--negative)' : 'var(--border)' }}
                     />
                   </div>
-                  {errors.other && <p style={{ fontSize: '12px', color: '#D94F4F', marginTop: '4px' }}>{errors.other}</p>}
+                  {errors.other && <p style={{ fontSize: '12px', color: 'var(--negative)', marginTop: '4px' }}>{errors.other}</p>}
                 </div>
                 <RupeeInput id="emi" label="Total EMIs" value={emi} onChange={makeHandler(setEmi, 'emi')} error={errors.emi} />
               </div>
@@ -327,19 +306,19 @@ export default function Step2Page() {
               alignItems: 'center',
               justifyContent: 'space-between',
               background: surplusPositive ? 'var(--brand-surface)' : '#FDF2F0',
-              border: `1px solid ${surplusPositive ? 'var(--brand)' : '#D94F4F'}`,
+              border: `1px solid ${surplusPositive ? 'var(--brand)' : 'var(--negative)'}`,
             }}>
               <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--ink-2)' }}>
                 {surplusPositive ? 'You have' : 'You are short'} each month
               </span>
-              <span style={{ fontSize: '15px', fontWeight: 600, color: surplusPositive ? 'var(--brand)' : '#D94F4F' }}>
-                {surplusPositive ? '' : '−'}₹{Math.abs(surplus).toLocaleString('en-IN')}
+              <span style={{ fontSize: '15px', fontWeight: 600, color: surplusPositive ? 'var(--brand)' : 'var(--negative)' }}>
+                {surplusPositive ? '' : '−'}{fmt(Math.abs(surplus))}
               </span>
             </div>
 
-            {/* Assets */}
-            <section>
-              <p style={sectionHeadStyle}>What You Have</p>
+            {/* What you've built */}
+            <section style={{ borderTop: '1px solid var(--border)', paddingTop: '24px' }}>
+              <p className="eyebrow" style={{ marginBottom: '12px' }}>What you&apos;ve built so far</p>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <RupeeInput id="savings" label="Savings & FD" value={savings} onChange={makeHandler(setSavings, 'savings')} error={errors.savings} />
                 <RupeeInput id="equity" label="Investments" sublabel="stocks, MF" value={equity} onChange={setEquity} />

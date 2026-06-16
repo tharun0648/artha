@@ -25,8 +25,8 @@ export default function StepIndicator({ currentStep }: StepIndicatorProps) {
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
               <div
                 style={{
-                  width: '24px',
-                  height: '24px',
+                  width: '28px',
+                  height: '28px',
                   borderRadius: '50%',
                   display: 'flex',
                   alignItems: 'center',
@@ -34,9 +34,9 @@ export default function StepIndicator({ currentStep }: StepIndicatorProps) {
                   fontSize: '12px',
                   fontWeight: 600,
                   flexShrink: 0,
-                  background: isCompleted || isActive ? 'var(--brand)' : 'var(--surface)',
-                  border: isCompleted || isActive ? 'none' : '1px solid var(--border)',
-                  color: isCompleted || isActive ? '#fff' : 'var(--muted)',
+                  background: isCompleted ? 'var(--brand)' : 'var(--surface)',
+                  border: isCompleted ? 'none' : isActive ? '2px solid var(--brand)' : '1px solid var(--border-strong)',
+                  color: isCompleted ? '#fff' : isActive ? 'var(--brand-text)' : 'var(--muted)',
                   boxShadow: isActive ? '0 0 0 4px var(--brand-surface)' : 'none',
                   transition: 'all 0.15s',
                 }}
@@ -56,7 +56,7 @@ export default function StepIndicator({ currentStep }: StepIndicatorProps) {
               <div
                 style={{
                   flex: 1,
-                  height: '1px',
+                  height: '1.5px',
                   background: isCompleted ? 'var(--brand)' : 'var(--border)',
                   margin: '0 8px',
                   marginBottom: '18px',

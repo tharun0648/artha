@@ -14,5 +14,13 @@ export default async function RootPage() {
 
   if (!profile) redirect('/onboarding/step-1')
 
+  const { data: twin } = await supabase
+    .from('financial_twin')
+    .select('monthly_income')
+    .eq('user_id', user.id)
+    .single()
+
+  if (!twin || twin.monthly_income === 0) redirect('/onboarding/step-2')
+
   redirect('/dashboard')
 }

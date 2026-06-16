@@ -7,12 +7,12 @@ import { GoalType } from '@/types/twin'
 import SubscriptionPicker, { SubscriptionRow } from '@/components/onboarding/SubscriptionPicker'
 import StepIndicator from '@/components/onboarding/StepIndicator'
 
-const GOAL_OPTIONS: { value: GoalType; emoji: string; label: string }[] = [
-  { value: 'home', emoji: '🏠', label: 'Home' },
-  { value: 'wealth', emoji: '📈', label: 'Wealth' },
-  { value: 'safety', emoji: '🛡', label: 'Safety' },
-  { value: 'retirement', emoji: '☀', label: 'Retirement' },
-  { value: 'education', emoji: '🎓', label: 'Education' },
+const GOAL_OPTIONS: { value: GoalType; label: string }[] = [
+  { value: 'home', label: 'Home' },
+  { value: 'wealth', label: 'Wealth' },
+  { value: 'safety', label: 'Safety' },
+  { value: 'retirement', label: 'Retirement' },
+  { value: 'education', label: 'Education' },
 ]
 
 const AMOUNT_CHIPS = [
@@ -76,7 +76,7 @@ export default function Step3Page() {
 
   const [selectedGoal, setSelectedGoal] = useState<GoalType | null>(null)
   const [targetAmount, setTargetAmount] = useState(0)
-  const [targetYear, setTargetYear] = useState(CURRENT_YEAR + 10)
+  const [targetYear, setTargetYear] = useState(2034)
   const [twinSurplus, setTwinSurplus] = useState(0)
   const [twinSavings, setTwinSavings] = useState(0)
   const [selectedSubs, setSelectedSubs] = useState<SubscriptionRow[]>([])
@@ -86,11 +86,11 @@ export default function Step3Page() {
     [targetAmount, twinSurplus, twinSavings]
   )
 
-  const [errors, setErrors] = useState<{ goal?: string; amount?: string }>({})
+  const [errors, setErrors] = useState<{ goal?: string; amount?: string; year?: string }>({})
   const [attempted, setAttempted] = useState(false)
   const [loading, setLoading] = useState(false)
 
-  const isFormValid = selectedGoal !== null && targetAmount > 0
+  const isFormValid = selectedGoal !== null && targetAmount > 0 && targetYear > CURRENT_YEAR && targetYear <= CURRENT_YEAR + 40
 
   useEffect(() => {
     async function fetchTwin() {
@@ -121,27 +121,36 @@ export default function Step3Page() {
     setSelectedSubs(subs)
   }, [])
 
-  function validateGoalForm(goal: GoalType | null, amount: number): { goal?: string; amount?: string } {
-    const e: { goal?: string; amount?: string } = {}
+  function validateGoalForm(goal: GoalType | null, amount: number, year: number): { goal?: string; amount?: string; year?: string } {
+    const e: { goal?: string; amount?: string; year?: string } = {}
     if (!goal) e.goal = 'Please select your primary goal'
     if (!amount || amount <= 0) e.amount = 'Please enter a target amount'
+    const currentYear = new Date().getFullYear()
+    if (!year || year <= currentYear || year > currentYear + 40) {
+      e.year = `Enter a year between ${currentYear + 1} and ${currentYear + 40}`
+    }
     return e
   }
 
   function handleGoalSelect(goal: GoalType) {
     setSelectedGoal(goal)
-    if (attempted) setErrors(validateGoalForm(goal, targetAmount))
+    if (attempted) setErrors(validateGoalForm(goal, targetAmount, targetYear))
   }
 
   function handleAmountChange(amount: number) {
     setTargetAmount(amount)
-    if (attempted) setErrors(validateGoalForm(selectedGoal, amount))
+    if (attempted) setErrors(validateGoalForm(selectedGoal, amount, targetYear))
+  }
+
+  function handleYearChange(year: number) {
+    setTargetYear(year)
+    if (attempted) setErrors(validateGoalForm(selectedGoal, targetAmount, year))
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setAttempted(true)
-    const errs = validateGoalForm(selectedGoal, targetAmount)
+    const errs = validateGoalForm(selectedGoal, targetAmount, targetYear)
     if (Object.keys(errs).length > 0) {
       setErrors(errs)
       return
@@ -172,8 +181,8 @@ export default function Step3Page() {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '40px 24px' }}>
-      <div style={{ width: '100%', maxWidth: '480px' }}>
+    <div className="page-wrap page-content">
+      <div style={{ maxWidth: '560px', margin: '0 auto' }}>
         <StepIndicator currentStep={3} />
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -185,55 +194,29 @@ export default function Step3Page() {
               What&apos;s the one financial goal that matters most right now?
             </p>
 
-            {/* Goal grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '4px' }}>
-              {GOAL_OPTIONS.slice(0, 4).map(opt => (
+            {/* Goal chips */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '4px' }}>
+              {GOAL_OPTIONS.map(opt => (
                 <button
                   key={opt.value}
                   type="button"
                   onClick={() => handleGoalSelect(opt.value)}
                   style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: '8px',
-                    padding: '16px',
-                    borderRadius: '6px',
-                    border: `1px solid ${selectedGoal === opt.value ? 'var(--brand)' : errors.goal ? '#D94F4F' : 'var(--border)'}`,
+                    padding: '10px 20px',
+                    borderRadius: 'var(--r-sm)',
+                    border: `1px solid ${selectedGoal === opt.value ? 'var(--brand)' : errors.goal ? 'var(--negative)' : 'var(--border)'}`,
                     background: selectedGoal === opt.value ? 'var(--brand-surface)' : 'var(--surface)',
+                    color: selectedGoal === opt.value ? 'var(--brand-text)' : 'var(--ink)',
+                    fontSize: '13px',
                     cursor: 'pointer',
                     transition: 'all 0.1s',
                   }}
                 >
-                  <span style={{ fontSize: '20px' }}>{opt.emoji}</span>
-                  <span style={{ fontSize: '13px', fontWeight: 600, color: selectedGoal === opt.value ? 'var(--brand)' : 'var(--ink)' }}>
-                    {opt.label}
-                  </span>
+                  {opt.label}
                 </button>
               ))}
-              <button
-                type="button"
-                onClick={() => handleGoalSelect(GOAL_OPTIONS[4].value)}
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: '8px',
-                  padding: '16px',
-                  borderRadius: '6px',
-                  border: `1px solid ${selectedGoal === GOAL_OPTIONS[4].value ? 'var(--brand)' : errors.goal ? '#D94F4F' : 'var(--border)'}`,
-                  background: selectedGoal === GOAL_OPTIONS[4].value ? 'var(--brand-surface)' : 'var(--surface)',
-                  cursor: 'pointer',
-                  transition: 'all 0.1s',
-                }}
-              >
-                <span style={{ fontSize: '20px' }}>{GOAL_OPTIONS[4].emoji}</span>
-                <span style={{ fontSize: '13px', fontWeight: 600, color: selectedGoal === GOAL_OPTIONS[4].value ? 'var(--brand)' : 'var(--ink)' }}>
-                  {GOAL_OPTIONS[4].label}
-                </span>
-              </button>
             </div>
-            {errors.goal && <p style={{ fontSize: '12px', color: '#D94F4F', marginTop: '4px', marginBottom: '8px' }}>{errors.goal}</p>}
+            {errors.goal && <p style={{ fontSize: '12px', color: 'var(--negative)', marginTop: '4px', marginBottom: '8px' }}>{errors.goal}</p>}
 
             {/* Target amount */}
             <div style={{ marginTop: '20px' }}>
@@ -269,10 +252,10 @@ export default function Step3Page() {
                   value={targetAmount === 0 ? '' : targetAmount}
                   onChange={e => handleAmountChange(e.target.value === '' ? 0 : Number(e.target.value))}
                   placeholder="Custom amount"
-                  style={{ ...inputBase, paddingLeft: '26px', borderColor: errors.amount ? '#D94F4F' : 'var(--border)' }}
+                  style={{ ...inputBase, paddingLeft: '26px', borderColor: errors.amount ? 'var(--negative)' : 'var(--border)' }}
                 />
               </div>
-              {errors.amount && <p style={{ fontSize: '12px', color: '#D94F4F', marginTop: '4px' }}>{errors.amount}</p>}
+              {errors.amount && <p style={{ fontSize: '12px', color: 'var(--negative)', marginTop: '4px' }}>{errors.amount}</p>}
             </div>
 
             {/* Target year */}
@@ -282,15 +265,21 @@ export default function Step3Page() {
                   Realistic by: <strong style={{ color: 'var(--brand)' }}>{realisticYear}</strong> · Adjust if needed
                 </p>
               )}
-              <label style={labelStyle}>Target year</label>
               <input
                 type="number"
                 min={CURRENT_YEAR + 1}
-                max={CURRENT_YEAR + 30}
+                max={CURRENT_YEAR + 40}
                 value={targetYear}
-                onChange={e => setTargetYear(Number(e.target.value))}
-                style={inputBase}
+                onChange={e => handleYearChange(Number(e.target.value))}
+                placeholder="e.g. 2034"
+                style={{ ...inputBase, borderColor: errors.year ? 'var(--negative)' : 'var(--border)' }}
               />
+              {targetYear > 0 && targetYear > CURRENT_YEAR && targetYear <= CURRENT_YEAR + 40 && (
+                <p style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '4px' }}>
+                  That's {targetYear - CURRENT_YEAR} years away
+                </p>
+              )}
+              {errors.year && <p style={{ fontSize: '12px', color: 'var(--negative)', marginTop: '4px' }}>{errors.year}</p>}
             </div>
           </div>
 

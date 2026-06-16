@@ -130,8 +130,8 @@ export default function Step1Form({ cities }: { cities: string[] }) {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '40px 24px' }}>
-      <div style={{ width: '100%', maxWidth: '480px' }}>
+    <div className="page-wrap page-content">
+      <div style={{ maxWidth: '560px', margin: '0 auto' }}>
         <StepIndicator currentStep={1} />
 
         {/* Form card */}
@@ -146,7 +146,6 @@ export default function Step1Form({ cities }: { cities: string[] }) {
             {/* Age + City */}
             <div style={{ display: 'flex', gap: '12px' }}>
               <div style={{ width: '90px', flexShrink: 0 }}>
-                <label style={labelStyle} htmlFor="age">Age</label>
                 <input
                   id="age"
                   type="number"
@@ -154,10 +153,10 @@ export default function Step1Form({ cities }: { cities: string[] }) {
                   max={60}
                   value={age}
                   onChange={e => handleAgeChange(e.target.value === '' ? '' : Number(e.target.value))}
-                  placeholder="27"
-                  style={{ ...inputStyle, borderColor: errors.age ? '#D94F4F' : 'var(--border)' }}
+                  placeholder="Your age"
+                  style={{ ...inputStyle, borderColor: errors.age ? 'var(--negative)' : 'var(--border)' }}
                 />
-                {errors.age && <p style={{ fontSize: '12px', color: '#D94F4F', marginTop: '4px' }}>{errors.age}</p>}
+                {errors.age && <p style={{ fontSize: '12px', color: 'var(--negative)', marginTop: '4px' }}>{errors.age}</p>}
               </div>
               <div style={{ flex: 1 }}>
                 <label style={labelStyle} htmlFor="city">City</label>
@@ -165,14 +164,14 @@ export default function Step1Form({ cities }: { cities: string[] }) {
                   id="city"
                   value={city}
                   onChange={e => handleCityChange(e.target.value)}
-                  style={{ ...inputStyle, borderColor: errors.city ? '#D94F4F' : 'var(--border)' }}
+                  style={{ ...inputStyle, borderColor: errors.city ? 'var(--negative)' : 'var(--border)' }}
                 >
                   <option value="">Select city</option>
                   {cities.map(c => (
                     <option key={c} value={c}>{c}</option>
                   ))}
                 </select>
-                {errors.city && <p style={{ fontSize: '12px', color: '#D94F4F', marginTop: '4px' }}>{errors.city}</p>}
+                {errors.city && <p style={{ fontSize: '12px', color: 'var(--negative)', marginTop: '4px' }}>{errors.city}</p>}
               </div>
             </div>
 
@@ -191,7 +190,7 @@ export default function Step1Form({ cities }: { cities: string[] }) {
                       fontSize: '13px',
                       fontWeight: 500,
                       cursor: 'pointer',
-                      border: `1px solid ${companyType === opt.value ? 'var(--brand)' : errors.companyType ? '#D94F4F' : 'var(--border)'}`,
+                      border: `1px solid ${companyType === opt.value ? 'var(--brand)' : errors.companyType ? 'var(--negative)' : 'var(--border)'}`,
                       background: companyType === opt.value ? 'var(--brand)' : 'var(--surface)',
                       color: companyType === opt.value ? '#fff' : 'var(--ink-2)',
                       transition: 'all 0.1s',
@@ -201,7 +200,7 @@ export default function Step1Form({ cities }: { cities: string[] }) {
                   </button>
                 ))}
               </div>
-              {errors.companyType && <p style={{ fontSize: '12px', color: '#D94F4F', marginTop: '4px' }}>{errors.companyType}</p>}
+              {errors.companyType && <p style={{ fontSize: '12px', color: 'var(--negative)', marginTop: '4px' }}>{errors.companyType}</p>}
             </div>
 
             {/* Risk appetite */}

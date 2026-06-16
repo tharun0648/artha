@@ -1,3 +1,4 @@
+// NOTE: not currently used; dashboard renders verdict inline in page.tsx
 import type { VerdictOutput } from '@/types/analysis'
 
 interface VerdictCardProps {
@@ -11,7 +12,7 @@ interface VerdictCardProps {
 function probabilityColor(p: number): string {
   if (p >= 70) return 'var(--brand)'
   if (p >= 40) return 'var(--accent)'
-  return '#D94F4F'
+  return 'var(--negative)'
 }
 
 export default function VerdictCard({ verdict, goalLabel, goalAmount, goalYear, editHref }: VerdictCardProps) {
@@ -39,10 +40,10 @@ export default function VerdictCard({ verdict, goalLabel, goalAmount, goalYear, 
       </div>
 
       {/* Hero probability */}
-      <p style={{ fontSize: '40px', fontWeight: 700, color, lineHeight: 1, marginBottom: '8px' }}>
+      <p style={{ fontSize: '40px', fontWeight: 700, color, lineHeight: 1, marginBottom: '8px', fontFamily: 'var(--font-serif)' }}>
         {verdict.goal_probability}%
       </p>
-      <p style={{ fontSize: '14px', fontWeight: 400, lineHeight: 1.6, color: 'var(--ink-2)', marginBottom: '16px' }}>
+      <p style={{ fontSize: '14px', fontWeight: 400, lineHeight: 1.6, color: 'var(--ink-2)', marginBottom: '16px', fontFamily: 'var(--font-serif)' }}>
         {verdict.verdict}
       </p>
 
@@ -60,10 +61,10 @@ export default function VerdictCard({ verdict, goalLabel, goalAmount, goalYear, 
               <div key={f.rank}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
                   <span style={{ fontSize: '14px', color: 'var(--ink)' }}>{f.factor}</span>
-                  <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--accent)' }}>{f.contribution_pct}%</span>
+                  <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--brand-text)', fontFamily: 'var(--font-serif)' }}>{f.contribution_pct}%</span>
                 </div>
-                <div style={{ height: '3px', background: 'var(--border)', borderRadius: '2px', overflow: 'hidden' }}>
-                  <div style={{ height: '3px', width: `${f.contribution_pct}%`, background: 'var(--accent)', borderRadius: '2px' }} />
+                <div style={{ height: '3px', background: 'var(--brand-surface)', borderRadius: '2px', overflow: 'hidden' }}>
+                  <div style={{ height: '3px', width: `${f.contribution_pct}%`, background: 'var(--brand)', borderRadius: '2px' }} />
                 </div>
               </div>
             ))}

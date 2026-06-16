@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { SUBSCRIPTION_CATEGORIES } from '@/lib/subscriptions-data'
+import { fmt } from '@/lib/format'
 
 export type SubscriptionRow = { name: string; monthly_amount: number; category: string }
 
@@ -18,6 +19,9 @@ function primaryPlan(plans: { label: string; amount: number }[]): { label: strin
 export default function SubscriptionPicker({ onChange }: Props) {
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['entertainment']))
   const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [customSubs, setCustomSubs] = useState<string[]>([])
+  const [showCustomInput, setShowCustomInput] = useState(false)
+  const [customInputValue, setCustomInputValue] = useState('')
 
   const totalMonthly = Array.from(selected).reduce((sum, serviceId) => {
     for (const cat of SUBSCRIPTION_CATEGORIES) {
@@ -28,7 +32,7 @@ export default function SubscriptionPicker({ onChange }: Props) {
       }
     }
     return sum
-  }, 0)
+  }, 0) + (customSubs.length * 500)
 
   const opportunityCost10yr = Math.round(totalMonthly * 12 * ((Math.pow(1.125, 10) - 1) / 0.125))
 
@@ -42,8 +46,11 @@ export default function SubscriptionPicker({ onChange }: Props) {
         }
       }
     }
+    for (const customSub of customSubs) {
+      subs.push({ name: customSub, monthly_amount: 500, category: 'custom' })
+    }
     onChange(subs)
-  }, [selected, onChange])
+  }, [selected, customSubs, onChange])
 
   function toggleCategory(key: string) {
     setExpandedCategories(prev => {
@@ -59,6 +66,23 @@ export default function SubscriptionPicker({ onChange }: Props) {
       next.has(serviceId) ? next.delete(serviceId) : next.add(serviceId)
       return next
     })
+  }
+
+  function addCustomSubscription(name: string) {
+    if (name.trim() && customSubs.length < 5) {
+      setCustomSubs(prev => [...prev, name.trim()])
+      setCustomInputValue('')
+      setShowCustomInput(false)
+    }
+  }
+
+  function removeCustomSubscription(name: string) {
+    setCustomSubs(prev => prev.filter(s => s !== name))
+  }
+
+  function handleCustomSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    addCustomSubscription(customInputValue)
   }
 
   return (
@@ -144,11 +168,11 @@ export default function SubscriptionPicker({ onChange }: Props) {
       {totalMonthly > 0 && (
         <div style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: '6px', padding: '12px 14px', marginTop: '10px' }}>
           <p style={{ fontSize: '15px', fontWeight: 600, color: 'var(--ink)' }}>
-            Total: ₹{totalMonthly.toLocaleString('en-IN')}/month
+            Total: {fmt(totalMonthly)}/month
           </p>
           <p style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '2px' }}>
-            ₹{(totalMonthly * 12).toLocaleString('en-IN')}/year
-            {' · '}₹{opportunityCost10yr.toLocaleString('en-IN')} in 10yr if invested
+            {fmt(totalMonthly * 12)}/year
+            {' · '}{fmt(opportunityCost10yr)} in 10yr if invested
           </p>
         </div>
       )}

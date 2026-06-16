@@ -1,4 +1,4 @@
-# A₹tha — Snapshot (2026-06-15)
+# A₹tha — Snapshot (2026-06-16)
 
 Live technical state and pending tasks.
 
@@ -14,39 +14,47 @@ Live technical state and pending tasks.
 ## Design System
 
 ### CSS Custom Properties (`src/app/globals.css`)
-**Surfaces:** `--bg` (page), `--surface` (card), `--surface-2` (nested/input bg)
-**Borders:** `--border` (default), `--border-strong` (buttons, focused elements)
-**Text:** `--ink` (primary), `--ink-2` (body/secondary), `--muted` (labels, captions)
-**Brand:** `--brand`, `--brand-hover`, `--brand-surface`, `--brand-text`
-**Accent:** `--accent` (orange, causal bars, caution), `--accent-surface`
-**Semantic:** `--success`, `--warning`, `--risk-high`, `--risk-medium`, `--risk-low`
+**Surfaces:** `--bg` (#F4F1E8 warm ivory), `--surface` (#FFFFFF), `--surface-2` (#F7F4EC)
+**Borders:** `--border` (#E7E2D4), `--border-strong` (#D8D2C0)
+**Text:** `--ink` (#222A22), `--ink-2` (#576055), `--muted` (#8E948A)
+**Brand:** `--brand` (#5F7E57 sage), `--brand-hover` (#4B6645), `--brand-surface` (#E9EEE2), `--brand-surface-2` (#DCE5D2), `--brand-text` (#4B6645)
+**Accent:** `--accent` (#BE7A52 terracotta), `--accent-surface` (#F3E6DA)
+**Semantic:** `--positive` (#4F8A5B), `--negative` (#C2553D), `--amber` (#CE9B4B)
+**Typography:** `--font` (Hanken Grotesk), `--font-serif` (Instrument Serif)
+**Radius:** `--r-xs` (6px), `--r-sm` (9px), `--r` (13px), `--r-lg` (18px), `--r-xl` (24px)
+**Shadows:** `--sh-sm`, `--sh`, `--sh-lg`, `--sh-pop`
 
 Legacy aliases (`--bg-page`, `--bg-surface`, `--text-primary`, etc.) remain in `:root` for backwards compatibility.
 
 ### Type Scale
-| Role | Size | Weight | Color |
-|---|---|---|---|
-| Hero numbers | 40px | 700 | dynamic (brand/accent/#D94F4F) |
-| Page title / section header | 18px | 600 | `--ink` |
-| Card title | 15px | 600 | `--ink` |
-| Body / description | 14px | 400 | `--ink-2` |
-| Stat values in rows | 15px | 600 | `--ink` |
-| Labels / metadata | 12px | 500 | `--muted` |
-| Eyebrow / section tags | 11px | 600 | `--muted` (uppercase, 0.08em) |
-| Captions / fine print | 12px | 400 | `--muted` |
+| Role | Size | Weight | Color | Font |
+|---|---|---|---|---|
+| Hero numbers | 40px | 700 | dynamic (brand/accent) | Hanken Grotesk |
+| Page title / section header | 18px | 600 | `--ink` | Hanken Grotesk |
+| Card title | 15px | 600 | `--ink` | Hanken Grotesk |
+| Body / description | 14px | 400 | `--ink-2` | Hanken Grotesk |
+| Stat values in rows | 15px | 600 | `--ink` | Hanken Grotesk |
+| Labels / metadata | 12px | 500 | `--muted` | Hanken Grotesk |
+| Eyebrow / section tags | 11px | 600 | `--brand-text` (uppercase, 0.09em) | Hanken Grotesk |
+| Captions / fine print | 12px | 400 | `--muted` | Hanken Grotesk |
+| Display / narrative text | 17px+ | 400-700 | `--ink` | Instrument Serif |
+
+**Typography helpers:** `.eyebrow` class (11px/600/uppercase/0.09em letter-spacing/brand-text).
 
 ### Card System
-- **Card:** `bg var(--surface)`, `border: 1px solid var(--border)`, `border-radius: 8px`. No box-shadow.
-- **Nested surface / input area:** `bg var(--surface-2)`, `border: 1px solid var(--border)`, `border-radius: 6px`.
+- **Card:** `.card` class — `var(--surface)`, `border: 1px solid var(--border)`, `border-radius: var(--r-lg)` (18px), padding 22px. Variants: `.card-lg` (28px padding), `.card-flat` (surface-2 bg, transparent border), `.card-hoverable` (hover effects with shadow/transform).
+- **Nested surface / input area:** `var(--surface-2)`, `border: 1px solid var(--border)`, `border-radius: var(--r-sm)` (9px).
 - **Dividers:** `1px solid var(--border)`. No colored rules.
 
 ### Controls
-- **Primary button:** `var(--brand)`, white text, `6px` radius, `36px` height, `14px/500`.
-- **Secondary button:** transparent, `1px solid var(--border-strong)`, `var(--ink)`, same size.
-- **Ghost button:** no border/bg, `var(--ink-2)`, `13px/500`.
-- **Input / select:** `var(--surface)`, `1px solid var(--border)`, `6px` radius, `36px` height. Focus ring: `border var(--brand)` + `box-shadow 0 0 0 3px var(--brand-surface)` (via global CSS).
+- **Button:** `.btn` base class — flex, gap 8px, border-radius `var(--r-sm)`, font-size 14px/600, padding 10px 18px.
+- **Primary button:** `.btn-primary` — `var(--brand)`, white text, hover shadow effect.
+- **Secondary button:** `.btn-ghost` — `var(--surface)`, `border: 1px solid var(--border-strong)`, `var(--ink)`.
+- **Subtle button:** `.btn-subtle` — `var(--surface-2)`, transparent border, `var(--ink-2)`.
+- **Sizes:** `.btn-lg` (13px 24px, 15px, var(--r) radius), `.btn-sm` (7px 13px, 13px), `.btn-block` (width 100%).
+- **Input / select:** `.input` class — `var(--surface)`, `border: 1px solid var(--border-strong)`, `border-radius: var(--r-sm)`, padding 11px 13px. Focus ring: `border var(--brand)` + `box-shadow 0 0 0 3px var(--brand-surface)` (via global CSS).
 - **Persona/chip buttons:** surface + border; selected = `var(--brand-surface)` + `var(--brand)` border.
-- **Pills/badges:** `var(--surface-2)`, `4px` radius, `11px/500`.
+- **Pills/badges:** `var(--surface-2)`, `border-radius: var(--r-xs)`, `11px/500`.
 
 ### Logo
 - `src/components/logo.tsx` — Vital Ring SVG mark + Inter 600 wordmark. Props: `size` (default 28), `href` (default `/dashboard`, pass `null` to render without link).
@@ -73,8 +81,8 @@ User → `/` (Check session via `proxy.ts`)
 - **State A: no twin/income** — profile summary card + step-2 CTA card.
 - **State B: no goal** — 3 stat cards (surplus, savings rate, runway) + step-3 CTA card.
 - **State C: full verdict** — two-column CSS grid (`lg:grid-cols-[65%_35%]`, `max-w-[1080px]`):
-  - **Left:** Twin card (eyebrow + hero probability% + verdict text + divider + causal attribution inline rows) + subscription insight card.
-  - **Right:** `HealthScoreRing` (bar rows, no donut) + Snapshot card (6-stat 2-col grid) + Decision Lab CTA button.
+  - **Left:** Twin card (eyebrow + hero probability% + verdict text + divider + causal attribution inline rows) + `TrajectoryCard` (net worth path visualization) + subscription insight card.
+  - **Right:** `HealthScoreRing` (bar rows, no donut) + Snapshot card (6-stat 2-col grid) + `AskArthaCard` (chat interface with suggested questions) + Decision Lab CTA button.
 
 ### Decision Lab (`/decision-lab`)
 Client page + Twin Sidebar + 5 Native Action Chips:
@@ -88,6 +96,13 @@ Client page + Twin Sidebar + 5 Native Action Chips:
 - `POST /api/demo/temp` → anonymous session, redirects to `/onboarding/step-1`
 - `/demo-preview` — guarded by `DEMO_USER_ID` env check, shows financial snapshot + amber banner
 
+### Login Page (`src/app/(auth)/login/page.tsx`)
+- **Two-column layout:** `.login-grid` (1.05fr 0.95fr) — hidden preview column on mobile.
+- **Left column (preview):** Logo + headline + description + `PreviewCard` (mini dashboard verdict with health ring + causal bars).
+- **Right column (action):** Google OAuth button + demo options (full demo / temp session) in centered card.
+- **Icons:** LockIcon, ShieldIcon (security badges), GoogleIcon (OAuth button).
+- **Styling:** Rounded buttons (13px radius), hover effects, consistent with design system.
+
 ---
 
 ## Strict Implementation Maps
@@ -99,6 +114,8 @@ Client page + Twin Sidebar + 5 Native Action Chips:
 - `src/lib/prompts.ts`: `VERDICT_SYSTEM_PROMPT`, `SIMULATE_SYSTEM_PROMPT`, `SPEND_CHECK_SYSTEM_PROMPT`.
 - `proxy.ts`: Direct route protection & token refresh proxy. No edge `middleware.ts`.
 - `src/components/logo.tsx`: Vital Ring mark + wordmark lockup. Used in nav and can be used anywhere.
+- `src/components/dashboard/AskArthaCard.tsx`: Chat interface with suggested questions (`POST /api/chat`), answer display, CTA to Decision Lab.
+- `src/components/dashboard/TrajectoryCard.tsx`: Net worth trajectory visualization (SVG line chart), current vs potential paths, 12% growth assumption.
 
 ### 2. Math Lock Rules
 - `opportunity_cost_10yr` in spend-check = `Math.round(amount * Math.pow(1.12, 10)) - amount` (lump-sum, not SIP).
@@ -119,6 +136,11 @@ Client page + Twin Sidebar + 5 Native Action Chips:
 - Last eval run: 0 parse failures, 0 slow responses (>5s), 15,641 total tokens
 
 ---
+
+## Build Status (2026-06-16)
+
+- `npx tsc --noEmit` — clean, zero errors
+- `npm run build` — clean, all 18 routes compile (8 dynamic, 2 static)
 
 ## Active Bugs & Backlog
 
@@ -150,3 +172,15 @@ Client page + Twin Sidebar + 5 Native Action Chips:
     - `Logo` component created with Vital Ring SVG mark. Favicon added.
     - Login page: single centered card, no dark panels.
     - Layout max-width updated to 1080px.
+13. ~~**Task: Warm palette + typography update** — Done (2026-06-15)~~
+    - Updated to warm palette (#F4F1E8 bg, #5F7E57 brand, #BE7A52 accent).
+    - New typography: Hanken Grotesk (UI) + Instrument Serif (display/narrative).
+    - Enhanced radius system (6px/9px/13px/18px/24px).
+    - New shadow system (4 levels).
+    - Utility classes: `.card`, `.btn`, `.input`, `.eyebrow`, `.login-grid`, `.lab-grid`.
+    - Login page redesign: two-column layout with preview card.
+    - New dashboard components: `AskArthaCard` (chat), `TrajectoryCard` (net worth visualization).
+14. ~~**Task: Final audit + README architecture diagram** — Done (2026-06-16)~~
+    - Full architecture diagram added to README with user-facing explanations.
+    - AGENTS.md and SNAPSHOT.md updated to current state.
+    - Build verified clean: zero TS errors, all 18 routes compile.

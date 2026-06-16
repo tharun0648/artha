@@ -53,30 +53,36 @@ Session updates go to `SNAPSHOT.md`. This file holds unchanging contracts.
 ## UI Contracts
 
 ### Theme
-- Light only. Page background: `var(--bg)`. No white full-bleed pages, no dark panels.
+- Light only. Page background: `var(--bg)` (#F4F1E8 warm ivory). No white full-bleed pages, no dark panels.
 - All colors via CSS custom properties — never hardcoded hex or Tailwind dark values.
 - See `SNAPSHOT.md` for the full token set and type scale.
 
 ### Card System
-- **Card:** `background: var(--surface)`, `border: 1px solid var(--border)`, `border-radius: 8px`. No `box-shadow`.
-- **Nested surface / input bg:** `background: var(--surface-2)`, `border: 1px solid var(--border)`, `border-radius: 6px`.
+- **Utility classes:** Use `.card` base class with modifiers (`.card-lg`, `.card-flat`, `.card-hoverable`).
+- **Card:** `.card` — `background: var(--surface)`, `border: 1px solid var(--border)`, `border-radius: var(--r-lg)` (18px), padding 22px. No `box-shadow` (except hoverable variant).
+- **Nested surface / input bg:** `background: var(--surface-2)`, `border: 1px solid var(--border)`, `border-radius: var(--r-sm)` (9px).
 - **Dividers:** `1px solid var(--border)`. No colored rules, no heavy separators.
 
 ### CSS Variable Names (use these — not legacy aliases)
-- Backgrounds: `var(--bg)`, `var(--surface)`, `var(--surface-2)`
-- Borders: `var(--border)`, `var(--border-strong)`
-- Text: `var(--ink)`, `var(--ink-2)`, `var(--muted)`
-- Brand: `var(--brand)`, `var(--brand-hover)`, `var(--brand-surface)`, `var(--brand-text)`
-- Accent: `var(--accent)`, `var(--accent-surface)`
+- Backgrounds: `var(--bg)` (#F4F1E8), `var(--surface)` (#FFFFFF), `var(--surface-2)` (#F7F4EC)
+- Borders: `var(--border)` (#E7E2D4), `var(--border-strong)` (#D8D2C0)
+- Text: `var(--ink)` (#222A22), `var(--ink-2)` (#576055), `var(--muted)` (#8E948A)
+- Brand: `var(--brand)` (#5F7E57), `var(--brand-hover)` (#4B6645), `var(--brand-surface)` (#E9EEE2), `var(--brand-surface-2)` (#DCE5D2), `var(--brand-text)` (#4B6645)
+- Accent: `var(--accent)` (#BE7A52), `var(--accent-surface)` (#F3E6DA)
+- Semantic: `var(--positive)` (#4F8A5B), `var(--negative)` (#C2553D), `var(--amber)` (#CE9B4B)
+- Typography: `var(--font)` (Hanken Grotesk), `var(--font-serif)` (Instrument Serif)
+- Radius: `var(--r-xs)` (6px), `var(--r-sm)` (9px), `var(--r)` (13px), `var(--r-lg)` (18px), `var(--r-xl)` (24px)
+- Shadows: `var(--sh-sm)`, `var(--sh)`, `var(--sh-lg)`, `var(--sh-pop)`
 - Legacy aliases (`--bg-page`, `--bg-surface`, `--text-primary`, etc.) exist for backwards compat but do not use in new code.
 
 ### Controls
-- **Primary button:** `bg var(--brand)`, white text, `border: none`, `border-radius: 6px`, `height: 36px`, `font-size: 14px`, `font-weight: 500`. Hover: `var(--brand-hover)`.
-- **Secondary button:** transparent, `border: 1px solid var(--border-strong)`, `color: var(--ink)`. Same sizing.
-- **Ghost button:** no border, no bg, `color: var(--ink-2)`, `font-size: 13px`, `font-weight: 500`. Hover: `color: var(--ink)`.
-- **Input/select:** `bg var(--surface)`, `border: 1px solid var(--border)`, `border-radius: 6px`, `height: 36px`, `font-size: 14px`. Focus via global CSS rule (border brand + 3px ring brand-surface).
+- **Utility classes:** Use `.btn` base class with modifiers (`.btn-primary`, `.btn-ghost`, `.btn-subtle`, `.btn-lg`, `.btn-sm`, `.btn-block`).
+- **Primary button:** `.btn-primary` — `bg var(--brand)`, white text, border transparent, `border-radius: var(--r-sm)` (9px), padding 10px 18px, font-size 14px/600. Hover: `var(--brand-hover)` with shadow.
+- **Secondary button:** `.btn-ghost` — `bg var(--surface)`, `border: 1px solid var(--border-strong)`, `color var(--ink)`. Same sizing.
+- **Subtle button:** `.btn-subtle` — `bg var(--surface-2)`, border transparent, `color var(--ink-2)`.
+- **Input/select:** `.input` class — `bg var(--surface)`, `border: 1px solid var(--border-strong)`, `border-radius: var(--r-sm)`, padding 11px 13px, font-size 14px. Focus via global CSS rule (border brand + 3px ring brand-surface).
 - **Persona/chip buttons:** surface + border. Selected: `border-color var(--brand)`, `bg var(--brand-surface)`, `color var(--brand)`.
-- **Pills/badges:** `bg var(--surface-2)`, `border-radius: 4px`, `font-size: 11px`, `font-weight: 500`.
+- **Pills/badges:** `bg var(--surface-2)`, `border-radius: var(--r-xs)` (4px), font-size 11px/500.
 
 ### Logo Component
 - Import from `@/components/logo`. Props: `size?: number` (default 28), `href?: string | null` (default `/dashboard`).
@@ -86,8 +92,8 @@ Session updates go to `SNAPSHOT.md`. This file holds unchanging contracts.
 
 ### Dashboard Layout (State C)
 - Two-column CSS grid: `lg:grid-cols-[65%_35%]`, column gap 20px, max-width 1080px.
-- Left column: Twin card (eyebrow + 40px probability hero + verdict + divider + causal bars inline) + subscription insight card.
-- Right column: `HealthScoreRing` (bar rows only, no SVG donut) + Snapshot card (6-stat 2-col grid) + brand CTA button.
+- Left column: Twin card (eyebrow + 40px probability hero + verdict + divider + causal bars inline) + `TrajectoryCard` (net worth path visualization) + subscription insight card.
+- Right column: `HealthScoreRing` (bar rows only, no SVG donut) + Snapshot card (6-stat 2-col grid) + `AskArthaCard` (chat interface) + brand CTA button.
 
 ### StepIndicator
 - Circles: 24px diameter. Completed: brand fill, white ✓. Active: brand fill, white number, `box-shadow: 0 0 0 4px var(--brand-surface)`. Inactive: surface bg, 1px border, muted number.
@@ -118,3 +124,6 @@ Session updates go to `SNAPSHOT.md`. This file holds unchanging contracts.
 ## Gaps & Limits
 - City list in Step-1 hardcoded to 20 items.
 - Demo user's twin_analyses not pre-seeded (dashboard will trigger analyze-twin on first load).
+
+## Architecture Reference
+Full architecture diagram with user-facing explanations lives in [README.md](./README.md). SNAPSHOT.md holds the live technical state. This file holds unchanging contracts only.
