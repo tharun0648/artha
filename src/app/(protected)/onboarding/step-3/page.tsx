@@ -26,6 +26,17 @@ const AMOUNT_CHIPS = [
 
 const CURRENT_YEAR = new Date().getFullYear()
 
+function validateGoalForm(goal: GoalType | null, amount: number, year: number): { goal?: string; amount?: string; year?: string } {
+  const e: { goal?: string; amount?: string; year?: string } = {}
+  if (!goal) e.goal = 'Please select your primary goal'
+  if (!amount || amount <= 0) e.amount = 'Please enter a target amount'
+  const currentYear = new Date().getFullYear()
+  if (!year || year <= currentYear || year > currentYear + 40) {
+    e.year = `Enter a year between ${currentYear + 1} and ${currentYear + 40}`
+  }
+  return e
+}
+
 function calculateRealisticYear(goalAmount: number, twinSurplus: number, twinSavings: number): number {
   if (twinSurplus <= 0 && twinSavings <= 0) return CURRENT_YEAR + 10
   for (let years = 1; years <= 30; years++) {
@@ -111,26 +122,9 @@ export default function Step3Page() {
     fetchTwin()
   }, [])
 
-  useEffect(() => {
-    if (realisticYear !== null) {
-      setTargetYear(realisticYear)
-    }
-  }, [realisticYear])
-
   const handleSubsChange = useCallback((subs: SubscriptionRow[]) => {
     setSelectedSubs(subs)
   }, [])
-
-  function validateGoalForm(goal: GoalType | null, amount: number, year: number): { goal?: string; amount?: string; year?: string } {
-    const e: { goal?: string; amount?: string; year?: string } = {}
-    if (!goal) e.goal = 'Please select your primary goal'
-    if (!amount || amount <= 0) e.amount = 'Please enter a target amount'
-    const currentYear = new Date().getFullYear()
-    if (!year || year <= currentYear || year > currentYear + 40) {
-      e.year = `Enter a year between ${currentYear + 1} and ${currentYear + 40}`
-    }
-    return e
-  }
 
   function handleGoalSelect(goal: GoalType) {
     setSelectedGoal(goal)
@@ -139,6 +133,7 @@ export default function Step3Page() {
 
   function handleAmountChange(amount: number) {
     setTargetAmount(amount)
+    if (amount > 0) setTargetYear(calculateRealisticYear(amount, twinSurplus, twinSavings))
     if (attempted) setErrors(validateGoalForm(selectedGoal, amount, targetYear))
   }
 

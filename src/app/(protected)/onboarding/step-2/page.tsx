@@ -96,6 +96,24 @@ function validateFields(
   return e
 }
 
+const PERSONAS = {
+  graduate: {
+    label: 'Fresh Graduate 🎓',
+    sublabel: '₹30–50k income, building first habits',
+    values: { income: 45000, lastYear: 35000, rent: 12000, food: 6000, other: 8500, emi: 0, savings: 50000, equity: 0, epf: 0 },
+  },
+  midcareer: {
+    label: 'Mid-career 💼',
+    sublabel: '₹60–120k income, managing EMIs and savings',
+    values: { income: 85000, lastYear: 70000, rent: 22000, food: 8000, other: 11000, emi: 15000, savings: 300000, equity: 150000, epf: 80000 },
+  },
+  senior: {
+    label: 'Senior 🏠',
+    sublabel: '₹1.5L+ income, optimising for goals',
+    values: { income: 150000, lastYear: 130000, rent: 35000, food: 12000, other: 19000, emi: 45000, savings: 800000, equity: 500000, epf: 300000 },
+  },
+} as const
+
 export default function Step2Page() {
   const router = useRouter()
 
@@ -113,24 +131,6 @@ export default function Step2Page() {
   const [attempted, setAttempted] = useState(false)
   const [loading, setLoading] = useState(false)
   const [selectedPersona, setSelectedPersona] = useState<null | 'graduate' | 'midcareer' | 'senior'>(null)
-
-  const PERSONAS = {
-    graduate: {
-      label: 'Fresh Graduate 🎓',
-      sublabel: '₹30–50k income, building first habits',
-      values: { income: 45000, lastYear: 35000, rent: 12000, food: 6000, other: 8500, emi: 0, savings: 50000, equity: 0, epf: 0 },
-    },
-    midcareer: {
-      label: 'Mid-career 💼',
-      sublabel: '₹60–120k income, managing EMIs and savings',
-      values: { income: 85000, lastYear: 70000, rent: 22000, food: 8000, other: 11000, emi: 15000, savings: 300000, equity: 150000, epf: 80000 },
-    },
-    senior: {
-      label: 'Senior 🏠',
-      sublabel: '₹1.5L+ income, optimising for goals',
-      values: { income: 150000, lastYear: 130000, rent: 35000, food: 12000, other: 19000, emi: 45000, savings: 800000, equity: 500000, epf: 300000 },
-    },
-  } as const
 
   function applyPersona(key: 'graduate' | 'midcareer' | 'senior') {
     const v = PERSONAS[key].values

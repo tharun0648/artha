@@ -353,7 +353,6 @@ function DashboardContent() {
   const [profile, setProfile] = useState<Profile | null>(null)
   const [verdict, setVerdict] = useState<VerdictOutput | null | undefined>(undefined)
   const [displayName, setDisplayName] = useState('You')
-  const [dots, setDots] = useState('.')
   const [analysisError, setAnalysisError] = useState<string | null>(null)
 
   const fetchVerdict = useCallback(async (userId: string): Promise<VerdictOutput | null> => {
@@ -421,14 +420,6 @@ function DashboardContent() {
     }
     fetchData()
   }, [router, fetchVerdict])
-
-  useEffect(() => {
-    if (!isAnalyzing) return
-    const dotInterval = setInterval(() => {
-      setDots(d => d.length >= 3 ? '.' : d + '.')
-    }, 500)
-    return () => clearInterval(dotInterval)
-  }, [isAnalyzing])
 
   useEffect(() => {
     if (!isAnalyzing || twin === undefined) return
@@ -520,7 +511,7 @@ function DashboardContent() {
               </button>
             </div>
           ) : (
-            <LoadingVerdict dots={dots} onRetry={retryAnalysis} onBack={() => router.push('/onboarding/step-3')} />
+            <LoadingVerdict onRetry={retryAnalysis} onBack={() => router.push('/onboarding/step-3')} />
           )}
         </div>
       )
