@@ -1,8 +1,11 @@
+// Server layout for all authenticated routes: auth gate, sticky nav, and FAB.
+// Detects demo user by comparing user.id to DEMO_USER_ID env var.
 import { createClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import UserMenu from '@/components/nav/UserMenu'
 import Logo from '@/components/logo'
+import AskArthaFAB from '@/components/nav/AskArthaFAB'
 
 export default async function ProtectedLayout({
   children,
@@ -19,6 +22,7 @@ export default async function ProtectedLayout({
   }
 
   const email = user.email ?? 'U'
+  const isDemo = user.id === process.env.DEMO_USER_ID
 
   return (
     <>
@@ -27,13 +31,14 @@ export default async function ProtectedLayout({
         className="sticky top-0 z-10 h-14"
       >
         <div className="mx-auto max-w-270 px-6 h-full flex items-center justify-between">
-          <Logo size={24} href="/dashboard" />
-          <UserMenu email={email} />
+          <Logo size={28} href="/dashboard" />
+          <UserMenu email={email} isDemo={isDemo} />
         </div>
       </nav>
       <main className="px-6 py-8 mx-auto w-full max-w-270">
         {children}
       </main>
+      <AskArthaFAB />
     </>
   )
 }

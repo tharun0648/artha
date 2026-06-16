@@ -1,3 +1,5 @@
+// No-LLM credit card recommender — scores cards from the DB against the user's
+// actual spend profile and subscription categories, returns top 3 ranked matches.
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { FinancialTwin, Subscription } from '@/types/twin'
 import type { CreditCard } from '@/types/reference'
@@ -21,35 +23,38 @@ const SUB_CATEGORY_TO_REWARD: Record<string, string[]> = {
   telecom: ['utilities', 'bill'],
 }
 
-function dominantSubCategory(subscriptions: Subscription[]): string | null {
-  if (!subscriptions.length) return null
-  const counts: Record<string, number> = {}
-  for (const sub of subscriptions) {
-    counts[sub.category] = (counts[sub.category] ?? 0) + 1
-  }
-  return Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null
-}
-
 function scoreCard(card: CreditCard, twin: FinancialTwin, subscriptions: Subscription[]): number {
   let score = 0
 
-  const hasLounge = (card.lounge_access_domestic ?? 0) > 0 || (card.lounge_access_international ?? 0) > 0
-  if (hasLounge && twin.monthly_income > 80_000) score += 3
+  const annualIncome = twin.monthly_income * 12
+  if (annualIncome >= 1_500_000 && card.tier === 'premium') score += 3
+  else if (annualIncome >= 800_000 && card.tier === 'mid') score += 2
+  else if (annualIncome < 800_000 && card.tier === 'entry') score += 1
 
-  const dominant = dominantSubCategory(subscriptions)
-  if (dominant) {
-    const keywords = SUB_CATEGORY_TO_REWARD[dominant] ?? []
-    const cardCats = card.best_for_categories.map(c => c.toLowerCase())
-    if (keywords.some(kw => cardCats.some(cc => cc.includes(kw)))) score += 2
+  const hasLounge = (card.lounge_access_domestic ?? 0) > 0 || (card.lounge_access_international ?? 0) > 0
+  if (hasLounge && twin.monthly_income > 60_000) score += 2
+
+  if (twin.monthly_income > 100_000 &&
+      card.best_for_categories.some(c => c.toLowerCase().includes('travel'))) {
+    score += 2
+  }
+
+  const cardCatsLower = card.best_for_categories.map(c => c.toLowerCase())
+
+  // Score all active subscription categories (not just dominant)
+  const allCategories = [...new Set(subscriptions.map(s => s.category))]
+  for (const cat of allCategories) {
+    const keywords = SUB_CATEGORY_TO_REWARD[cat] ?? []
+    if (keywords.some(kw => cardCatsLower.some(cc => cc.includes(kw)))) score += 1
   }
 
   if (card.is_lifetime_free || card.annual_fee_inr < twin.monthly_income * 0.01) score += 2
 
-  const cardCatsLower = card.best_for_categories.map(c => c.toLowerCase())
+  // Weight spend score by monthly amount (1 pt per ₹5k, capped at 3)
   for (const { field, keywords } of SPEND_TO_REWARD) {
     const spendAmount = twin[field] as number
     if (spendAmount > 0 && keywords.some(kw => cardCatsLower.some(cc => cc.includes(kw)))) {
-      score += 1
+      score += Math.min(3, Math.floor(spendAmount / 5000))
     }
   }
 
@@ -61,17 +66,21 @@ export async function matchCreditCards(
   subscriptions: Subscription[],
   supabase: SupabaseClient
 ): Promise<CreditCard[]> {
+  const annualIncome = twin.monthly_income * 12
   const { data, error } = await supabase
     .from('credit_cards')
     .select('*')
     .eq('is_active', true)
-    .lte('min_annual_income_inr', twin.monthly_income * 12)
 
   if (error || !data) return []
 
-  return (data as CreditCard[])
+  const eligible = (data as CreditCard[]).filter(card =>
+    !card.min_annual_income_inr || card.min_annual_income_inr <= annualIncome
+  )
+
+  return eligible
     .map(card => ({ card, score: scoreCard(card, twin, subscriptions) }))
-    .sort((a, b) => b.score - a.score)
+    .sort((a, b) => b.score - a.score || a.card.annual_fee_inr - b.card.annual_fee_inr)
     .slice(0, 3)
     .map(({ card }) => card)
 }

@@ -1,3 +1,5 @@
+// Output types for all three analysis routes: verdict, simulation, and spend-check.
+
 export interface CausalFactor {
   rank: number
   factor: string
@@ -59,4 +61,5 @@ export interface SpendCheckResult {
   verdict_tone: 'caution' | 'warning' | 'neutral'
   one_insight: string
   options: ['Buy now', 'Wait 48 hours', 'Skip it']
+  buy_smart?: string | null
 }

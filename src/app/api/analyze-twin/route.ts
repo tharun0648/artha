@@ -1,3 +1,6 @@
+// POST /api/analyze-twin — full financial twin analysis with 24-hour caching.
+// Flow: math functions compute causal attribution + projections → Groq narrates
+// goal_probability, health_score, and verdict → merged result cached in twin_analyses.
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import Groq from 'groq-sdk'
@@ -11,6 +14,7 @@ import {
   getMarketReturn,
 } from '@/lib/financial-math'
 import { VERDICT_SYSTEM_PROMPT } from '@/lib/prompts'
+import { fmt } from '@/lib/format'
 import type { CausalFactor, HealthScore, SubscriptionInsight, VerdictOutput } from '@/types/analysis'
 import type { FinancialTwin, Profile, Subscription } from '@/types/twin'
 
@@ -23,12 +27,6 @@ const ONE_ACTIONS: Record<string, string> = {
   'Insufficient emergency fund': 'Build a 3-month expense buffer before new investments.',
   'Under-invested in equity': 'Shift surplus into a diversified index fund SIP.',
   'Goal timeline too short': 'Extend the target year or increase monthly savings.',
-}
-
-function fmt(n: number): string {
-  if (n >= 10_00_000) return `₹${(n / 10_00_000).toFixed(1)}L`
-  if (n >= 1_000) return `₹${(n / 1_000).toFixed(0)}k`
-  return `₹${n}`
 }
 
 function pct(part: number, whole: number): string {
@@ -199,7 +197,7 @@ export async function POST() {
   const [twinRes, profileRes, subsRes] = await Promise.all([
     supabase.from('financial_twin').select('*').eq('user_id', user.id).single(),
     supabase.from('profiles').select('*').eq('id', user.id).single(),
-    supabase.from('subscriptions').select('*').eq('user_id', user.id),
+    supabase.from('subscriptions').select('*').eq('user_id', user.id).eq('is_active', true),
   ])
 
   if (twinRes.error || !twinRes.data) {
@@ -224,7 +222,9 @@ export async function POST() {
 
   if (cached?.output && cached?.created_at) {
     const ageMs = Date.now() - new Date(cached.created_at).getTime()
-    if (ageMs < 24 * 60 * 60 * 1000) {
+    const twinUpdatedAt = twin.updated_at ? new Date(twin.updated_at).getTime() : 0
+    const cacheCreatedAt = new Date(cached.created_at).getTime()
+    if (ageMs < 24 * 60 * 60 * 1000 && twinUpdatedAt <= cacheCreatedAt) {
       return NextResponse.json(cached.output as VerdictOutput)
     }
   }

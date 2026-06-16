@@ -1,8 +1,11 @@
+// POST /api/spend-check — evaluate a purchase against the user's financial twin.
+// EMI breach and opportunity cost are computed here; Groq writes narrative only.
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import Groq from 'groq-sdk'
 import { createClient } from '@/lib/supabase/server'
 import { SPEND_CHECK_SYSTEM_PROMPT } from '@/lib/prompts'
+import { fmt } from '@/lib/format'
 import type { SpendCheckResult } from '@/types/analysis'
 import type { FinancialTwin, Profile, Subscription } from '@/types/twin'
 
@@ -11,12 +14,9 @@ const groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
 interface SpendCheckRequest {
   item: string
   amount: number
-}
-
-function fmt(n: number): string {
-  if (n >= 10_00_000) return `₹${(n / 10_00_000).toFixed(1)}L`
-  if (n >= 1_000) return `₹${(n / 1_000).toFixed(0)}k`
-  return `₹${Math.round(n)}`
+  // Demo persona overrides — skips DB fetch when present
+  twinOverride?: FinancialTwin
+  profileOverride?: Profile
 }
 
 function pct(part: number, whole: number): string {
@@ -24,16 +24,28 @@ function pct(part: number, whole: number): string {
   return `${Math.round((part / whole) * 100)}%`
 }
 
-function normalizeResult(raw: Record<string, unknown>, mathValues: { emiBreached: boolean; oppCost: number }): SpendCheckResult {
-  const tone = String(raw.verdict_tone ?? 'neutral')
+function computeBuySmart(item: string, amount: number, verdictTone: 'warning' | 'caution' | 'neutral'): string | null {
+  if (verdictTone === 'neutral') return null
+  const lower = item.toLowerCase()
+  if (['phone', 'laptop', 'electronics', 'tablet', 'camera'].some(k => lower.includes(k))) {
+    return `If you buy, use a card with no-cost EMI over 6 months — reduces monthly impact to ${fmt(Math.round(amount / 6))}.`
+  }
+  if (['food', 'restaurant', 'dining'].some(k => lower.includes(k))) {
+    return 'Use a cashback card on dining — you can recover 5–10% back.'
+  }
+  return 'Consider splitting over 3-month no-cost EMI to protect your surplus.'
+}
+
+function normalizeResult(raw: Record<string, unknown>, mathValues: { emiBreached: boolean; oppCost: number; verdictTone: 'warning' | 'caution' | 'neutral'; buySmart: string | null }): SpendCheckResult {
   return {
     purchase_summary: String(raw.purchase_summary ?? ''),
     emi_ceiling_breach: mathValues.emiBreached,
     goal_impact_statement: String(raw.goal_impact_statement ?? ''),
     opportunity_cost_10yr: mathValues.oppCost,
-    verdict_tone: (tone === 'warning' || tone === 'caution') ? tone : 'neutral',
+    verdict_tone: mathValues.verdictTone,
     one_insight: String(raw.one_insight ?? ''),
     options: ['Buy now', 'Wait 48 hours', 'Skip it'],
+    buy_smart: mathValues.buySmart,
   }
 }
 
@@ -58,22 +70,33 @@ export async function POST(req: Request) {
   if (!item) return NextResponse.json({ error: 'Item name required' }, { status: 400 })
   if (!amount || amount <= 0) return NextResponse.json({ error: 'Amount must be positive' }, { status: 400 })
 
-  const [twinRes, profileRes, subsRes] = await Promise.all([
-    supabase.from('financial_twin').select('*').eq('user_id', user.id).single(),
-    supabase.from('profiles').select('*').eq('id', user.id).single(),
-    supabase.from('subscriptions').select('name,monthly_amount,category').eq('user_id', user.id).eq('is_active', true),
-  ])
+  let twin: FinancialTwin
+  let profile: Profile
+  let subscriptions: Pick<Subscription, 'name' | 'monthly_amount' | 'category'>[]
 
-  if (twinRes.error || !twinRes.data) {
-    return NextResponse.json({ error: 'Financial twin not found' }, { status: 404 })
-  }
-  if (profileRes.error || !profileRes.data) {
-    return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
-  }
+  if (body.twinOverride && body.profileOverride) {
+    // Demo mode: use client-supplied persona data, skip DB
+    twin = body.twinOverride
+    profile = body.profileOverride
+    subscriptions = []
+  } else {
+    const [twinRes, profileRes, subsRes] = await Promise.all([
+      supabase.from('financial_twin').select('*').eq('user_id', user.id).single(),
+      supabase.from('profiles').select('*').eq('id', user.id).single(),
+      supabase.from('subscriptions').select('name,monthly_amount,category').eq('user_id', user.id).eq('is_active', true),
+    ])
 
-  const twin = twinRes.data as FinancialTwin
-  const profile = profileRes.data as Profile
-  const subscriptions = (subsRes.data ?? []) as Pick<Subscription, 'name' | 'monthly_amount' | 'category'>[]
+    if (twinRes.error || !twinRes.data) {
+      return NextResponse.json({ error: 'Financial twin not found' }, { status: 404 })
+    }
+    if (profileRes.error || !profileRes.data) {
+      return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
+    }
+
+    twin = twinRes.data as FinancialTwin
+    profile = profileRes.data as Profile
+    subscriptions = (subsRes.data ?? []) as Pick<Subscription, 'name' | 'monthly_amount' | 'category'>[]
+  }
 
   // Pre-computed math — Groq receives results, never recalculates
   const emiHeadroom = twin.monthly_income * 0.4 - twin.total_monthly_emi
@@ -82,7 +105,15 @@ export async function POST(req: Request) {
   // Opportunity cost: lump-sum compound growth at 12% over 10 years minus principal
   const oppCost = Math.round(amount * Math.pow(1.12, 10)) - amount
 
-  const surplus = twin.monthly_income - twin.total_monthly_expenses
+  const monthlySurplus = Math.max(twin.monthly_income - twin.total_monthly_expenses, 0)
+  const surplusRatio = monthlySurplus > 0 ? amount / monthlySurplus : 1
+  const verdictTone: 'warning' | 'caution' | 'neutral' = emiBreached || surplusRatio > 0.75
+    ? 'warning'
+    : surplusRatio > 0.30
+      ? 'caution'
+      : 'neutral'
+  const surplus = monthlySurplus
+  const buySmart = computeBuySmart(item, amount, verdictTone)
   const monthlySubTotal = subscriptions.reduce((s, sub) => s + sub.monthly_amount, 0)
 
   const context = `
@@ -122,7 +153,7 @@ PRE-COMPUTED MATH (do not recalculate)
     })
 
     const raw = JSON.parse(completion.choices[0]?.message?.content ?? '{}') as Record<string, unknown>
-    result = normalizeResult(raw, { emiBreached, oppCost })
+    result = normalizeResult(raw, { emiBreached, oppCost, verdictTone, buySmart })
 
     if (!result.one_insight || !result.purchase_summary) {
       throw new Error('Groq returned malformed spend-check result')

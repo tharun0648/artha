@@ -1,7 +1,11 @@
+// Core financial math library — all numeric computations live here.
+// Rule: Groq never recalculates; it receives pre-computed values from these functions.
+// DB-dependent functions (getMarketReturn, requiredCorpus, etc.) use the server Supabase client.
 import { createClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
 import { FinancialTwin, Profile } from '@/types/twin'
 import { MarketInstrument } from '@/types/reference'
+import { fmt } from '@/lib/format'
 
 // ── Pure math (no DB) ─────────────────────────────────────
 
@@ -122,7 +126,7 @@ export async function causalAttribution(
     factors.push({
       factor: 'Low savings rate',
       raw_score: (0.20 - savingsRate) * 3,
-      finding: `You save ${(savingsRate * 100).toFixed(0)}% of income — target is 20%+. That's ₹${Math.round((income * 0.20) - surplus).toLocaleString('en-IN')}/month short.`
+      finding: `You save ${(savingsRate * 100).toFixed(0)}% of income — target is 20%+. That's ${fmt(Math.round((income * 0.20) - surplus))}/month short.`
     })
   }
 
@@ -130,7 +134,7 @@ export async function causalAttribution(
     factors.push({
       factor: 'High EMI burden',
       raw_score: (emiRatio - 0.30) * 2.5,
-      finding: `EMIs consume ${(emiRatio * 100).toFixed(0)}% of income — safe ceiling is 30%. You're paying ₹${twin.total_monthly_emi.toLocaleString('en-IN')}/month.`
+      finding: `EMIs consume ${(emiRatio * 100).toFixed(0)}% of income — safe ceiling is 30%. You're paying ${fmt(twin.total_monthly_emi)}/month.`
     })
   }
 
@@ -138,7 +142,7 @@ export async function causalAttribution(
     factors.push({
       factor: 'Lifestyle inflation',
       raw_score: lifestyleInflation * 2,
-      finding: `Your expenses grew faster than income. Lifestyle inflation is absorbing ₹${Math.round(income * lifestyleInflation).toLocaleString('en-IN')}/month of your raise.`
+      finding: `Your expenses grew faster than income. Lifestyle inflation is absorbing ${fmt(Math.round(income * lifestyleInflation))}/month of your raise.`
     })
   }
 
@@ -146,7 +150,7 @@ export async function causalAttribution(
     factors.push({
       factor: 'Insufficient emergency fund',
       raw_score: (3 - emergencyRunway) * 0.8,
-      finding: `You have ${emergencyRunway.toFixed(1)} months of expenses saved. Minimum is 3 months — that's ₹${Math.round(expenses * 3).toLocaleString('en-IN')}.`
+      finding: `You have ${emergencyRunway.toFixed(1)} months of expenses saved. Minimum is 3 months — that's ${fmt(Math.round(expenses * 3))}.`
     })
   }
 
@@ -154,7 +158,7 @@ export async function causalAttribution(
     factors.push({
       factor: 'Under-invested in equity',
       raw_score: 0.8,
-      finding: `Equity investments of ₹${twin.equity_investments.toLocaleString('en-IN')} are low relative to income. Missing compounding upside.`
+      finding: `Equity investments of ${fmt(twin.equity_investments)} are low relative to income. Missing compounding upside.`
     })
   }
 
@@ -162,7 +166,7 @@ export async function causalAttribution(
     factors.push({
       factor: 'Goal timeline too short',
       raw_score: 1,
-      finding: `Your current trajectory falls short of ₹${requiredCorpusAmount.toLocaleString('en-IN')} by the target year.`
+      finding: `Your current trajectory falls short of ${fmt(requiredCorpusAmount)} by the target year.`
     })
   }
 

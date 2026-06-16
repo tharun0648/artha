@@ -1,3 +1,6 @@
+// Core domain types for the financial twin system.
+// Field names are canonical — see AGENTS.md for the no-legacy-alias contract.
+
 export interface Profile {
   id: string
   age: number

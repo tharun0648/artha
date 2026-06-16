@@ -1,13 +1,15 @@
+// POST /api/simulate — run a life-scenario simulation against a user's financial twin.
+// Math (net worth projections) is pre-computed here; Groq writes narrative only.
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import Groq from 'groq-sdk'
 import { createClient } from '@/lib/supabase/server'
 import {
-  projectedSavingsAtGoal,
-  requiredCorpus,
+  sipFutureValue,
   compoundGrowth,
 } from '@/lib/financial-math'
 import { SIMULATE_SYSTEM_PROMPT } from '@/lib/prompts'
+import { fmt } from '@/lib/format'
 import type { SimulationResult } from '@/types/analysis'
 import type { FinancialTwin, Profile } from '@/types/twin'
 
@@ -15,12 +17,9 @@ const groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
 
 interface SimulateRequest {
   scenario: string
-}
-
-function fmt(n: number): string {
-  if (n >= 10_00_000) return `₹${(n / 10_00_000).toFixed(1)}L`
-  if (n >= 1_000) return `₹${(n / 1_000).toFixed(0)}k`
-  return `₹${n}`
+  // Demo persona overrides — skips DB fetch when present
+  twinOverride?: FinancialTwin
+  profileOverride?: Profile
 }
 
 function pct(part: number, whole: number): string {
@@ -68,7 +67,6 @@ const SCENARIO_ASSUMPTIONS: Record<
 
 async function projectNetWorth(
   twin: FinancialTwin,
-  yearsToProject: number,
   city: string,
   risk: 'conservative' | 'moderate' | 'aggressive',
   age: number
@@ -76,19 +74,26 @@ async function projectNetWorth(
   const monthlyExpenses = twin.total_monthly_expenses
   const monthlySurplus = Math.max(twin.monthly_income - monthlyExpenses, 0)
   const currentCorpus = twin.current_savings + twin.equity_investments + twin.epf_balance
+  const returnRate = 0.11 // ~Nifty 50 long-term CAGR
 
-  // Simple projection: assume constant surplus, market returns ~10% annually
-  const year5 = compoundGrowth(currentCorpus, 0.10, 5) + monthlySurplus * 12 * 5 * 1.05
-  const year10 = compoundGrowth(currentCorpus, 0.10, 10) + monthlySurplus * 12 * 10 * 1.05
+  // SIP future value: compounding monthly contributions
+  const year5 = sipFutureValue(monthlySurplus, returnRate, 5)
+             + compoundGrowth(currentCorpus, returnRate, 5)
 
-  // Find goal achievement year
+  const year10 = sipFutureValue(monthlySurplus, returnRate, 10)
+              + compoundGrowth(currentCorpus, returnRate, 10)
+
+  // Goal achievement check
   let goalYear: number | null = null
   if (twin.primary_goal && twin.goal_target_amount > 0) {
-    const yearsToGoal = twin.goal_target_year - new Date().getFullYear()
-    const projected = compoundGrowth(currentCorpus, 0.10, yearsToGoal) +
-      monthlySurplus * 12 * yearsToGoal * 1.05
-    if (projected >= twin.goal_target_amount) {
-      goalYear = twin.goal_target_year
+    const currentYear = new Date().getFullYear()
+    for (let y = 1; y <= 20; y++) {
+      const projected = sipFutureValue(monthlySurplus, returnRate, y)
+                      + compoundGrowth(currentCorpus, returnRate, y)
+      if (projected >= twin.goal_target_amount) {
+        goalYear = currentYear + y
+        break
+      }
     }
   }
 
@@ -146,30 +151,34 @@ GOAL ACHIEVEMENT
 
 function normalizeSimulationResult(
   raw: Record<string, unknown>,
-  scenario: string
+  scenario: string,
+  currentPath: { year5: number; year10: number; goalYear: number | null },
+  scenarioPath: { year5: number; year10: number; goalYear: number | null },
+  scenarioMonthlySurplus: number
 ): SimulationResult {
-  const cp = (raw.current_path ?? {}) as Record<string, unknown>
-  const sp = (raw.scenario_path ?? {}) as Record<string, unknown>
-
   return {
     scenario: String(raw.scenario ?? scenario),
     assumption_note: String(raw.assumption_note ?? ''),
     current_path: {
-      net_worth_5yr: clamp(Math.round(Number(cp.net_worth_5yr) || 0), 0, 999_99_99_999),
-      net_worth_10yr: clamp(Math.round(Number(cp.net_worth_10yr) || 0), 0, 999_99_99_999),
-      goal_achieved_year: cp.goal_achieved_year ? Math.round(Number(cp.goal_achieved_year)) : null,
+      net_worth_5yr: Math.round(currentPath.year5),
+      net_worth_10yr: Math.round(currentPath.year10),
+      goal_achieved_year: currentPath.goalYear,
     },
     scenario_path: {
-      net_worth_5yr: clamp(Math.round(Number(sp.net_worth_5yr) || 0), 0, 999_99_99_999),
-      net_worth_10yr: clamp(Math.round(Number(sp.net_worth_10yr) || 0), 0, 999_99_99_999),
-      goal_achieved_year: sp.goal_achieved_year ? Math.round(Number(sp.goal_achieved_year)) : null,
-      break_even_year: sp.break_even_year ? Math.round(Number(sp.break_even_year)) : null,
-      monthly_surplus_after: clamp(Math.round(Number(sp.monthly_surplus_after) || 0), -999_99_999, 999_99_999),
+      net_worth_5yr: Math.round(scenarioPath.year5),
+      net_worth_10yr: Math.round(scenarioPath.year10),
+      goal_achieved_year: scenarioPath.goalYear,
+      break_even_year: raw.break_even_year
+        ? clamp(Math.round(Number(raw.break_even_year)), 2024, 2060)
+        : null,
+      monthly_surplus_after: scenarioMonthlySurplus,
     },
     goal_impact: String(raw.goal_impact ?? ''),
     verdict: String(raw.verdict ?? 'Feasible but requires careful planning.'),
-    key_risks: Array.isArray(raw.key_risks) ? raw.key_risks.map(String) : [],
-    key_opportunities: Array.isArray(raw.key_opportunities) ? raw.key_opportunities.map(String) : [],
+    key_risks: Array.isArray(raw.key_risks) ? raw.key_risks.map(String).slice(0, 3) : [],
+    key_opportunities: Array.isArray(raw.key_opportunities)
+      ? raw.key_opportunities.map(String).slice(0, 3)
+      : [],
   }
 }
 
@@ -194,20 +203,30 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Scenario required' }, { status: 400 })
   }
 
-  const [twinRes, profileRes] = await Promise.all([
-    supabase.from('financial_twin').select('*').eq('user_id', user.id).single(),
-    supabase.from('profiles').select('*').eq('id', user.id).single(),
-  ])
+  let twin: FinancialTwin
+  let profile: Profile
 
-  if (twinRes.error || !twinRes.data) {
-    return NextResponse.json({ error: 'Financial twin not found' }, { status: 404 })
-  }
-  if (profileRes.error || !profileRes.data) {
-    return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
+  if (body.twinOverride && body.profileOverride) {
+    // Demo mode: use client-supplied persona data, skip DB
+    twin = body.twinOverride
+    profile = body.profileOverride
+  } else {
+    const [twinRes, profileRes] = await Promise.all([
+      supabase.from('financial_twin').select('*').eq('user_id', user.id).single(),
+      supabase.from('profiles').select('*').eq('id', user.id).single(),
+    ])
+
+    if (twinRes.error || !twinRes.data) {
+      return NextResponse.json({ error: 'Financial twin not found' }, { status: 404 })
+    }
+    if (profileRes.error || !profileRes.data) {
+      return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
+    }
+
+    twin = twinRes.data as FinancialTwin
+    profile = profileRes.data as Profile
   }
 
-  const twin = twinRes.data as FinancialTwin
-  const profile = profileRes.data as Profile
   const city = profile.city || 'National Average'
   const risk = profile.risk_appetite ?? 'moderate'
 
@@ -230,14 +249,18 @@ export async function POST(req: Request) {
     ),
   }
 
+  const scenarioMonthlySurplus = Math.max(
+    modifiedTwin.monthly_income - modifiedTwin.total_monthly_expenses, 0
+  )
+
   let currentPath: Awaited<ReturnType<typeof projectNetWorth>>
   let scenarioPath: Awaited<ReturnType<typeof projectNetWorth>>
   let context: string
 
   try {
     [currentPath, scenarioPath] = await Promise.all([
-      projectNetWorth(twin, 10, city, risk, profile.age),
-      projectNetWorth(modifiedTwin, 10, city, risk, profile.age),
+      projectNetWorth(twin, city, risk, profile.age),
+      projectNetWorth(modifiedTwin, city, risk, profile.age),
     ])
 
     context = await buildSimulationContext(
@@ -268,7 +291,7 @@ export async function POST(req: Request) {
     })
 
     const raw = JSON.parse(completion.choices[0]?.message?.content ?? '{}') as Record<string, unknown>
-    result = normalizeSimulationResult(raw, scenario)
+    result = normalizeSimulationResult(raw, scenario, currentPath, scenarioPath, scenarioMonthlySurplus)
 
     if (!result.scenario || !result.verdict) {
       throw new Error('Groq returned malformed simulation result')
