@@ -3,13 +3,15 @@
 // so the server never reads Aarav's DB data when a demo persona is selected.
 'use client'
 
-import { Suspense, useCallback, useEffect, useRef, useState } from 'react'
+import { Suspense, memo, useCallback, useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import dynamic from 'next/dynamic'
 import { createClient } from '@/lib/supabase/client'
-import SimulationCard from '@/components/decision-lab/SimulationCard'
-import SpendCheckCard from '@/components/decision-lab/SpendCheckCard'
 import type { SimulationResult, SpendCheckResult, VerdictOutput } from '@/types/analysis'
+
+const SimulationCard = dynamic(() => import('@/components/decision-lab/SimulationCard'))
+const SpendCheckCard = dynamic(() => import('@/components/decision-lab/SpendCheckCard'))
 import type { CreditCard } from '@/types/reference'
 import type { FinancialTwin } from '@/types/twin'
 import { fmt } from '@/lib/format'
@@ -108,7 +110,12 @@ function ScenarioIcon({ id }: { id: PanelId }) {
 
 // ── Twin card ─────────────────────────────────────────────────────────────────
 
-function TwinCard({ twin, verdict, firstName }: {
+function expFmt(v: number | null | undefined): string {
+  if (!v || v === 0) return '—'
+  return `${fmt(v)}/mo`
+}
+
+const TwinCard = memo(function TwinCard({ twin, verdict, firstName }: {
   twin: FinancialTwin
   verdict: VerdictOutput | null
   firstName: string
@@ -135,11 +142,6 @@ function TwinCard({ twin, verdict, firstName }: {
     const p = verdict.goal_probability
     const label = p >= 85 ? 'well on track' : p >= 65 ? 'on track' : p >= 40 ? 'reachable' : 'at risk'
     summaryRows.push({ label: 'Outlook', value: label, color: probabilityColor(p) })
-  }
-
-  function expFmt(v: number | null | undefined): string {
-    if (!v || v === 0) return '—'
-    return `${fmt(v)}/mo`
   }
 
   const expenseRows: Array<{ label: string; value: string }> = [
@@ -194,7 +196,7 @@ function TwinCard({ twin, verdict, firstName }: {
       ))}
     </div>
   )
-}
+})
 
 // ── Scenario buttons ──────────────────────────────────────────────────────────
 
@@ -777,8 +779,11 @@ function DecisionLabContent() {
   }, [])
 
   const sendChat = useCallback(async (text: string) => {
-    const updated: ChatMessage[] = [...chatMessages, { role: 'user', content: text }]
-    setChatMessages(updated)
+    let apiMessages: ChatMessage[] = []
+    setChatMessages(prev => {
+      apiMessages = [...prev, { role: 'user', content: text }]
+      return apiMessages
+    })
     setChatLoading(true)
     try {
       const demoIdxRaw = sessionStorage.getItem('demoPersonaIdx')
@@ -797,7 +802,7 @@ function DecisionLabContent() {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: updated, ...demoOverrides }),
+        body: JSON.stringify({ messages: apiMessages, ...demoOverrides }),
       })
       const data = await res.json()
       setChatMessages(prev => [...prev, { role: 'assistant', content: data.reply ?? 'Something went wrong.' }])
@@ -806,7 +811,7 @@ function DecisionLabContent() {
     } finally {
       setChatLoading(false)
     }
-  }, [chatMessages])
+  }, [])
 
   // Fire pending chat message after ChatPanel renders
   useEffect(() => {

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { SUBSCRIPTION_CATEGORIES } from '@/lib/subscriptions-data'
 import { fmt } from '@/lib/format'
 
@@ -23,18 +23,22 @@ export default function SubscriptionPicker({ onChange }: Props) {
   const [showCustomInput, setShowCustomInput] = useState(false)
   const [customInputValue, setCustomInputValue] = useState('')
 
-  const totalMonthly = Array.from(selected).reduce((sum, serviceId) => {
-    for (const cat of SUBSCRIPTION_CATEGORIES) {
-      const svc = cat.services.find(s => s.id === serviceId)
-      if (svc) {
-        const plan = primaryPlan(svc.plans)
-        return sum + (plan?.amount ?? 0)
+  const totalMonthly = useMemo(() =>
+    Array.from(selected).reduce((sum, serviceId) => {
+      for (const cat of SUBSCRIPTION_CATEGORIES) {
+        const svc = cat.services.find(s => s.id === serviceId)
+        if (svc) {
+          const plan = primaryPlan(svc.plans)
+          return sum + (plan?.amount ?? 0)
+        }
       }
-    }
-    return sum
-  }, 0) + (customSubs.length * 500)
+      return sum
+    }, 0) + (customSubs.length * 500)
+  , [selected, customSubs])
 
-  const opportunityCost10yr = Math.round(totalMonthly * 12 * ((Math.pow(1.125, 10) - 1) / 0.125))
+  const opportunityCost10yr = useMemo(() =>
+    Math.round(totalMonthly * 12 * ((Math.pow(1.125, 10) - 1) / 0.125))
+  , [totalMonthly])
 
   useEffect(() => {
     const subs: SubscriptionRow[] = []
